@@ -1,25 +1,52 @@
 "use client";
 
+import { useState } from 'react';
 import { useCart } from '@/context/CartContext';
 import styles from './Checkout.module.css';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { collection, addDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import TopNav from '@/components/TopNav';
 import Footer from '@/components/Footer';
 
 export default function CheckoutPage() {
   const { cart, totalPrice, clearCart } = useCart();
   const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (cart.length === 0) return;
     
-    // Simulate order creation API delay
-    alert('訂單建立成功！');
+    setIsSubmitting(true);
     
-    clearCart();
-    router.push('/');
+    try {
+      const formData = new FormData(e.currentTarget);
+      const orderData = {
+        buyer: {
+          name: formData.get('name'),
+          phone: formData.get('phone'),
+          address: formData.get('address'),
+          payment: formData.get('payment'),
+        },
+        items: cart,
+        totalAmount: totalPrice,
+        createdAt: new Date(),
+        status: 'pending' // Optional status field
+      };
+
+      await addDoc(collection(db, 'orders'), orderData);
+      
+      alert('訂單建立成功！');
+      clearCart();
+      router.push('/');
+    } catch (error: any) {
+      console.error("Order submission error: ", error);
+      alert(`訂單建立失敗：${error.message || '請稍後再試'}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -42,22 +69,22 @@ export default function CheckoutPage() {
                 <form id="checkout-form" className={styles.form} onSubmit={handleSubmit}>
                   <div className={styles.field}>
                     <label className={styles.label} htmlFor="name">收件人姓名</label>
-                    <input className={styles.input} type="text" id="name" required placeholder="王大明" />
+                    <input className={styles.input} type="text" id="name" name="name" required placeholder="王大明" />
                   </div>
                   
                   <div className={styles.field}>
                     <label className={styles.label} htmlFor="phone">聯絡電話</label>
-                    <input className={styles.input} type="tel" id="phone" required placeholder="0912-345-678" />
+                    <input className={styles.input} type="tel" id="phone" name="phone" required placeholder="0912-345-678" />
                   </div>
                   
                   <div className={styles.field}>
                     <label className={styles.label} htmlFor="address">配送地址</label>
-                    <input className={styles.input} type="text" id="address" required placeholder="台北市信義區..." />
+                    <input className={styles.input} type="text" id="address" name="address" required placeholder="台北市信義區..." />
                   </div>
                   
                   <div className={styles.field}>
                     <label className={styles.label} htmlFor="payment">付款方式</label>
-                    <select className={styles.select} id="payment" required>
+                    <select className={styles.select} id="payment" name="payment" required>
                       <option value="credit_card">信用卡</option>
                       <option value="cash_on_delivery">貨到付款</option>
                     </select>
@@ -95,8 +122,9 @@ export default function CheckoutPage() {
                     type="submit" 
                     form="checkout-form" 
                     className={styles.submitBtn}
+                    disabled={isSubmitting}
                   >
-                    確認送出訂單
+                    {isSubmitting ? '處理中...' : '確認送出訂單'}
                   </button>
                 </div>
               </div>
