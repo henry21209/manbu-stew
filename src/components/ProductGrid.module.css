@@ -16,6 +16,22 @@
   gap: 1.5rem;
 }
 
+.loadingState {
+  text-align: center;
+  padding: 6rem 0;
+  color: var(--on-surface-variant);
+  font-family: var(--font-body);
+  font-size: 1.125rem;
+  letter-spacing: 0.1em;
+  animation: pulse 2.5s infinite ease-in-out;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.5; }
+  50% { opacity: 1; }
+  100% { opacity: 0.5; }
+}
+
 
 
 .subtitle {

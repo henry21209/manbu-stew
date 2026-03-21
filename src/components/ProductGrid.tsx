@@ -1,13 +1,55 @@
 "use client";
 
-// 匯入 CSS 模組
+import { useState, useEffect } from 'react';
 import styles from './ProductGrid.module.css';
-// 匯入我們剛才建立的真實 Mock 資料 (請確認相對路徑是否正確，通常是往上兩層)
-import productsData from '../../data/products.json';
 import { useCart } from '@/context/CartContext';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+
+type Product = {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  imageUrl: string;
+  category: string;
+};
 
 export default function ProductGrid() {
   const { addToCart } = useCart();
+  const [productsData, setProductsData] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchProducts() {
+      try {
+        const q = query(
+          collection(db, 'products'),
+          where('isAvailable', '==', true)
+        );
+        const querySnapshot = await getDocs(q);
+        const productsList: Product[] = [];
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          productsList.push({
+            id: doc.id,
+            name: data.name,
+            description: data.description,
+            price: data.price,
+            imageUrl: data.imageUrl,
+            category: data.category,
+          });
+        });
+        setProductsData(productsList);
+      } catch (error) {
+        console.error("Failed to fetch products:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchProducts();
+  }, []);
   return (
     <section className={styles.section}>
       <div className={styles.container}>
@@ -20,10 +62,18 @@ export default function ProductGrid() {
           <a href="#" className={styles.link}>查看全部</a>
         </div>
 
-        <div className={styles.grid}>
-          {/* 改用匯入的 productsData，並加入 index 參數 */}
-          {productsData.map((p, index) => {
-            // 將商業邏輯動態轉換為 UI 渲染邏輯
+        {isLoading ? (
+          <div className={styles.loadingState}>
+            商品載入中...
+          </div>
+        ) : productsData.length === 0 ? (
+          <div className={styles.loadingState} style={{ gridColumn: '1 / -1', color: 'var(--on-surface-variant)', fontStyle: 'italic' }}>
+            目前暫無商品
+          </div>
+        ) : (
+          <div className={styles.grid}>
+            {productsData.map((p, index) => {
+              // 將商業邏輯動態轉換為 UI 渲染邏輯
             const isOffsetY = index % 2 !== 0; // 利用索引讓奇數項產生高低交錯的排版效果
             const tagType = p.category === '年節禮盒' ? 'primary' : 'secondary';
 
@@ -62,7 +112,8 @@ export default function ProductGrid() {
               </div>
             );
           })}
-        </div>
+          </div>
+        )}
       </div>
     </section>
   );

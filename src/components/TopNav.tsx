@@ -4,6 +4,7 @@ import styles from './TopNav.module.css';
 import { useCart } from '@/context/CartContext';
 import CartDrawer from './CartDrawer';
 import { useState } from 'react';
+import Link from 'next/link';
 
 export default function TopNav() {
   const { totalItems } = useCart();
@@ -12,7 +13,7 @@ export default function TopNav() {
   return (
     <nav className={styles.nav}>
       <div className={styles.container}>
-        <div className={styles.logo}>漫步食光</div>
+        <Link href="/" className={styles.logo}>漫步食光</Link>
         
         <div className={styles.links}>
           <a href="#">慢燉系列</a>
