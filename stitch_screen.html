@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-TW"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&amp;family=Manrope:wght@300;400;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Manrope', sans-serif;
+            background-color: #faf9f6;
+            color: #2f3430;
+        }
+        h1, h2, h3, .font-serif {
+            font-family: 'Noto Serif TC', serif;
+        }
+        .editorial-shadow {
+            box-shadow: 0 20px 40px -10px rgba(47, 52, 48, 0.05);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "on-surface-variant": "#5c605c",
+                "on-surface": "#2f3430",
+                "surface-container-lowest": "#ffffff",
+                "tertiary-fixed": "#fce9c8",
+                "surface-container-highest": "#e0e4de",
+                "surface": "#faf9f6",
+                "on-secondary-fixed-variant": "#4e604f",
+                "surface-container": "#edeeea",
+                "on-tertiary-fixed-variant": "#6c5f45",
+                "primary-fixed": "#feddb3",
+                "on-background": "#2f3430",
+                "inverse-primary": "#fbdbb0",
+                "on-primary-fixed": "#503c1d",
+                "inverse-surface": "#0d0f0d",
+                "surface-container-low": "#f4f4f0",
+                "primary": "#725a39",
+                "surface-dim": "#d6dbd5",
+                "on-secondary-container": "#445646",
+                "outline-variant": "#afb3ae",
+                "on-primary-container": "#644e2e",
+                "on-secondary": "#eafee8",
+                "tertiary-container": "#fce9c8",
+                "surface-variant": "#e0e4de",
+                "on-error": "#fff7f6",
+                "primary-fixed-dim": "#efd0a6",
+                "surface-container-high": "#e6e9e4",
+                "primary-dim": "#654f2e",
+                "outline": "#777c77",
+                "secondary-fixed-dim": "#c6dac5",
+                "on-tertiary-fixed": "#4f432b",
+                "on-secondary-fixed": "#324334",
+                "tertiary-dim": "#5e5239",
+                "secondary-fixed": "#d4e8d2",
+                "secondary-container": "#d4e8d2",
+                "on-primary": "#fff6ef",
+                "tertiary-fixed-dim": "#eddbba",
+                "primary-container": "#feddb3",
+                "on-error-container": "#742410",
+                "secondary": "#526453",
+                "error-dim": "#5c1202",
+                "on-tertiary-container": "#62553c",
+                "error-container": "#fe8b70",
+                "tertiary": "#6b5d44",
+                "surface-bright": "#faf9f6",
+                "surface-tint": "#725a39",
+                "secondary-dim": "#465747",
+                "background": "#faf9f6",
+                "on-primary-fixed-variant": "#6f5836",
+                "error": "#9e422c",
+                "on-tertiary": "#fff8f0",
+                "inverse-on-surface": "#9d9d9a"
+              },
+              fontFamily: {
+                "headline": ["Noto Serif TC"],
+                "body": ["Manrope"],
+                "label": ["Manrope"]
+              },
+              borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+            },
+          },
+        }
+    </script>
+</head>
+<body class="bg-surface text-on-surface selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- Top Navigation Bar -->
+<nav class="fixed top-0 w-full z-50 bg-[#FAF9F6]/80 dark:bg-[#2F3430]/80 backdrop-blur-xl transition-colors">
+<div class="flex justify-between items-center px-16 py-6 max-w-[1440px] mx-auto">
+<div class="text-2xl font-serif font-bold text-[#725A39] dark:text-[#D2B48C]">漫步食光</div>
+<div class="hidden md:flex gap-12 items-center">
+<a class="text-[#2F3430]/70 dark:text-[#FAF9F6]/70 font-sans hover:text-[#725A39] transition-all duration-300" href="#">慢燉系列</a>
+<a class="text-[#2F3430]/70 dark:text-[#FAF9F6]/70 font-sans hover:text-[#725A39] transition-all duration-300" href="#">節氣湯品</a>
+<a class="text-[#2F3430]/70 dark:text-[#FAF9F6]/70 font-sans hover:text-[#725A39] transition-all duration-300" href="#">年節禮盒</a>
+<a class="text-[#2F3430]/70 dark:text-[#FAF9F6]/70 font-sans hover:text-[#725A39] transition-all duration-300" href="#">關於我們</a>
+</div>
+<div class="flex items-center gap-6 text-[#725A39]">
+<button class="scale-95 active:scale-100 transition-transform">
+<span class="material-symbols-outlined" data-icon="shopping_bag">shopping_bag</span>
+</button>
+<button class="scale-95 active:scale-100 transition-transform">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+</button>
+</div>
+</div>
+</nav>
+<main class="pt-24">
+<!-- Hero Section -->
+<section class="relative h-[870px] flex items-center px-16 overflow-hidden">
+<div class="absolute inset-0 z-0">
+<img alt="Minimalist kitchen scene with organic vegetables" class="w-full h-full object-cover opacity-90 scale-105" data-alt="Minimalist kitchen scene with warm sunlight and organic vegetables" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSwcvQrgC94_V7pR4EQgps3nRue9NKNou8-esSmJh0xcxRRuBWIm56iAWqLH-4vnYNQ6NMnvyFYWUHnPh8MNUwP4tI9jZoxxZeRlpPJf4MoSkAYlv41bOznXcvi_twgWQYAC1mwHnFDlNmAbiZKa_cwskYjlhr-QxN8wIHCmEIS3t_XjLQaU6dEHQV_b5-o8MO2RM_rYEfRG7LK3m8NfiN4abue7PbzU6etqmc_lP2tMP7KFhcTucnDKNCLc7Uztcm0oJ7Hfy0Zw"/>
+<div class="absolute inset-0 bg-gradient-to-r from-surface via-surface/40 to-transparent"></div>
+</div>
+<div class="relative z-10 max-w-2xl">
+<h1 class="text-6xl md:text-7xl font-headline font-bold text-on-surface leading-tight tracking-tight mb-8">
+                    慢慢生活，<br/>好好吃飯。
+                </h1>
+<p class="text-lg md:text-xl text-on-surface-variant font-body leading-relaxed mb-12 max-w-lg">
+                    選用在地小農食材，慢燉入味。讓忙碌的日常，也能品味純淨滋味。
+                </p>
+<div class="flex">
+<button class="bg-primary text-on-primary px-10 py-4 rounded-xl font-body font-semibold tracking-wide hover:bg-primary-dim transition-colors scale-95 active:scale-100 duration-300 shadow-sm">
+                        探索慢燉系列
+                    </button>
+</div>
+</div>
+</section>
+<!-- Product Grid Section -->
+<section class="py-32 px-16 bg-surface-container-low">
+<div class="max-w-[1440px] mx-auto">
+<div class="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-6">
+<div>
+<span class="text-primary font-body text-sm tracking-[0.2em] uppercase mb-4 block">Seasonal Selection</span>
+<h2 class="text-4xl font-headline font-bold text-on-surface">本月嚴選</h2>
+</div>
+<div class="h-px flex-1 bg-outline-variant/30 hidden md:block mx-12 mb-4"></div>
+<a class="text-primary font-body font-semibold hover:underline underline-offset-8 transition-all" href="#">查看全部</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+<!-- Product Card 1 -->
+<div class="group cursor-pointer">
+<div class="relative aspect-[4/5] rounded-xl overflow-hidden mb-6 bg-surface-container-highest">
+<img alt="Seasonal Soup Bowl" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" data-alt="Earthy ceramic bowl filled with steaming seasonal vegetable soup" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC8taBliu7Ad9Y4k7hxXvtn4RF9mVY03hxjtw9AjEBrD2eVvVicap_wEKavNaJ--cuwqQD3TVmb2eHvy0PQdXpui0V808i5zWDRz_CnaWTXit5D92-TGiuQDW_eLGsJVkOnysiIRsYK_l6cXrjC_Fq0NJ7OI_5RkMjLbV799ITKacRvoOnALanEO93Ks7SNYQRE0Ej7HbeCIqF7a3pFiz5lhvOr0oSepcDxUiVDliTtlr79VgcTQwx3O0zk4VAjCYJWzqb4wI7N3Q"/>
+<div class="absolute top-4 right-4">
+<span class="bg-secondary text-on-secondary px-4 py-1.5 rounded-full text-xs font-bold tracking-wider">節氣湯品</span>
+</div>
+</div>
+<h3 class="text-xl font-headline font-bold text-on-surface mb-2 group-hover:text-primary transition-colors">暖胃蕈菇慢燉湯</h3>
+<p class="text-on-surface-variant text-sm font-body mb-4">嚴選六種在地蕈菇，手工慢火煨煮六小時。</p>
+<div class="flex items-center justify-between">
+<span class="text-primary font-bold text-lg">NT$ 180</span>
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors" data-icon="add_circle">add_circle</span>
+</div>
+</div>
+<!-- Product Card 2 -->
+<div class="group cursor-pointer translate-y-8 md:translate-y-16">
+<div class="relative aspect-[4/5] rounded-xl overflow-hidden mb-6 bg-surface-container-highest">
+<img alt="New Year Gift Box" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" data-alt="Elegant minimalist gift box with silk ribbon and organic contents" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCaZbi0vl6uEoyaNQytcymlC-6zJ5SLi6qp2mCDGYrb5o2vx70BTW7QJNFrxLiqBYXMq5Wg5aNuCX6s6FF1HOBFHNeerA_Bpqlafzr5EtCSZ0G-DrfBzOqzN1E0wh4I9xUOSec_-oQcheTIAeDnQ4aN7WqSErGWTc-N082EjfsSpJD4WDCYu6_OCRZpiYXS3vh6nkrE2zlOCNNNJP-WBn97F11UxQNWopUc3pC-rK3yRECfdH6jRAxZvK6AFR5Olcz7CfSiXNpuSQ"/>
+<div class="absolute top-4 right-4">
+<span class="bg-primary text-on-primary px-4 py-1.5 rounded-full text-xs font-bold tracking-wider">年節禮盒</span>
+</div>
+</div>
+<h3 class="text-xl font-headline font-bold text-on-surface mb-2 group-hover:text-primary transition-colors">拾光．春節限定禮盒</h3>
+<p class="text-on-surface-variant text-sm font-body mb-4">內含四款經典湯品與兩款慢燉主食，送一份純淨心意。</p>
+<div class="flex items-center justify-between">
+<span class="text-primary font-bold text-lg">NT$ 1,280</span>
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors" data-icon="add_circle">add_circle</span>
+</div>
+</div>
+<!-- Product Card 3 -->
+<div class="group cursor-pointer">
+<div class="relative aspect-[4/5] rounded-xl overflow-hidden mb-6 bg-surface-container-highest">
+<img alt="Braised Vegetable Dish" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" data-alt="Rich vegetable stew served in a rustic stoneware plate" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCTTTJkDeSuDsDxfSAEO5QVb3SvRKBRAfkl0GgjgTM5dUKWcgDZaqM6p8_xx4W9I3DBcBwTfJavSjAKi-MXrsuJWTvU61vbiuCj0ZuPVyASe4ETcxVMIJPRxg8FoyqCDEG9f-YI-ZQIrFEveh-n8KI3MpzBtA6JQZSO9SHjwh8I_px4_S9nOIsz84QxV-_ghgeobMgQPsGUpIrLxkEx-YM6UlNe1lPj3sNbVC8UxwkXSVTIowDVdjKJFN3Stb4_nt8WUgQu2eONqw"/>
+<div class="absolute top-4 right-4">
+<span class="bg-secondary text-on-secondary px-4 py-1.5 rounded-full text-xs font-bold tracking-wider">慢燉系列</span>
+</div>
+</div>
+<h3 class="text-xl font-headline font-bold text-on-surface mb-2 group-hover:text-primary transition-colors">紅酒時蔬慢燉什錦</h3>
+<p class="text-on-surface-variant text-sm font-body mb-4">純素紅酒醬汁，完美融合根莖蔬菜的鮮甜。</p>
+<div class="flex items-center justify-between">
+<span class="text-primary font-bold text-lg">NT$ 220</span>
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors" data-icon="add_circle">add_circle</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Brand Story Section -->
+<section class="py-40 px-16 bg-surface relative overflow-hidden">
+<div class="max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-12 items-center gap-16 lg:gap-24">
+<div class="lg:col-span-5 order-2 lg:order-1">
+<span class="text-secondary font-body text-sm tracking-[0.3em] uppercase mb-6 block">Our Philosophy</span>
+<h2 class="text-5xl font-headline font-bold text-on-surface mb-10 leading-tight italic">把日常，煮成時光</h2>
+<div class="space-y-6 text-on-surface-variant leading-loose font-body text-lg">
+<p>在漫步食光，我們相信食物不只是溫飽，更是一種生活的慢節奏。細心挑選每一份天然食材，以慢火溫潤燉煮，將四季的豐饒鎖進每一份冷凍餐點中。</p>
+<p>讓您在快節奏的都市生活中，只需片刻加熱，就能重拾家的溫度與安心。每一口，都是對身體與心靈的細心呵護。</p>
+</div>
+<div class="mt-12 flex items-center gap-4">
+<div class="w-12 h-px bg-primary/40"></div>
+<span class="font-headline italic text-primary">Stroll &amp; Eat Team</span>
+</div>
+</div>
+<div class="lg:col-span-7 order-1 lg:order-2">
+<div class="relative">
+<div class="absolute -inset-4 border border-outline-variant/20 rounded-xl -rotate-2"></div>
+<img alt="Calming cooking process" class="rounded-xl w-full aspect-video object-cover shadow-2xl editorial-shadow" data-alt="Calm hands sorting fresh green herbs and organic spices on a linen cloth" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDIM7q-ZDkKfnY6qhMYA3QSh-fJSmgBjkxo46MRmmfTvGdXWrqgacENsXss7qJl3F1SuyHll2wTusW4FgTO-TqeClxw7pv9BqjbQ2V5I1iPURUmKyi4pjihnDfmp3LhABwYpaFeT8JsHmLfmOyk41VPMUO2NnPAhXvQmpEKaHLNG46X5DTiST6DHcH7uel1rQMDAWqWPfR8uxU56TwHVkAjIRVIcE0LYRnUxtIJ4oZZWDj5hSOG4d-dkBRj9Zdl6TvCRoavqc35UA"/>
+<div class="absolute -bottom-8 -left-8 bg-secondary-container p-8 rounded-xl hidden md:block max-w-xs shadow-lg">
+<p class="text-on-secondary-container font-headline italic text-xl">"讓忙碌暫停，與自己好好對話。"</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Newsletter / Community Section -->
+<section class="py-32 px-16 bg-surface-container-highest">
+<div class="max-w-4xl mx-auto text-center">
+<h2 class="text-3xl font-headline font-bold text-on-surface mb-6">加入漫步社群</h2>
+<p class="text-on-surface-variant font-body mb-10">訂閱我們的電子報，獲取最新節氣食譜與限時優惠。</p>
+<form class="flex flex-col md:flex-row gap-4 max-w-lg mx-auto">
+<input class="flex-1 bg-surface-container-lowest border-none rounded-xl px-6 py-4 focus:ring-2 focus:ring-primary text-on-surface" placeholder="您的電子郵件" type="email"/>
+<button class="bg-on-surface text-surface px-8 py-4 rounded-xl font-body font-bold hover:bg-on-surface-variant transition-colors">立即訂閱</button>
+</form>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-[#EDEEEA] dark:bg-[#1A1C1A] w-full py-16 px-16 transition-colors">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-12 max-w-[1440px] mx-auto items-start">
+<div class="space-y-6">
+<div class="font-serif text-lg italic text-[#725A39] dark:text-[#D2B48C]">漫步食光 Stroll &amp; Eat</div>
+<p class="text-[#2F3430] dark:text-[#FAF9F6] font-sans text-sm leading-relaxed opacity-70">
+                    把日常，煮成時光。<br/>
+                    堅持天然，無添加的慢燉美學。
+                </p>
+</div>
+<div class="space-y-4">
+<div class="text-[#725A39] font-bold text-sm uppercase tracking-widest">探索</div>
+<ul class="space-y-2 text-sm text-[#2F3430]/60 dark:text-[#FAF9F6]/60">
+<li><a class="hover:text-[#725A39] dark:hover:text-[#D2B48C] underline-offset-4 hover:underline transition-all" href="#">品牌故事</a></li>
+<li><a class="hover:text-[#725A39] dark:hover:text-[#D2B48C] underline-offset-4 hover:underline transition-all" href="#">配送政策</a></li>
+<li><a class="hover:text-[#725A39] dark:hover:text-[#D2B48C] underline-offset-4 hover:underline transition-all" href="#">聯絡我們</a></li>
+<li><a class="hover:text-[#725A39] dark:hover:text-[#D2B48C] underline-offset-4 hover:underline transition-all" href="#">隱私權服務</a></li>
+</ul>
+</div>
+<div class="space-y-4">
+<div class="text-[#725A39] font-bold text-sm uppercase tracking-widest">關注我們</div>
+<div class="flex gap-4">
+<span class="material-symbols-outlined cursor-pointer hover:text-[#725A39]" data-icon="public">public</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-[#725A39]" data-icon="share">share</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-[#725A39]" data-icon="mail">mail</span>
+</div>
+</div>
+<div class="md:text-right">
+<div class="text-[#2F3430]/60 dark:text-[#FAF9F6]/60 font-sans text-xs">
+                    © 2024 漫步食光 Stroll &amp; Eat. 把日常，煮成時光。
+                </div>
+</div>
+</div>
+</footer>
+<!-- FAB (Suppressed based on logic but available if needed for specific actions) -->
+<div class="fixed bottom-8 right-8 z-50">
+<button class="bg-primary text-on-primary w-14 h-14 rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-transform active:scale-95">
+<span class="material-symbols-outlined" data-icon="chat_bubble" style="font-variation-settings: 'FILL' 1;">chat_bubble</span>
+</button>
+</div>
+</body></html>

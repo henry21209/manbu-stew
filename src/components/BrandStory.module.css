@@ -1,0 +1,139 @@
+.section {
+  padding: 10rem 4rem;
+  background-color: var(--surface);
+  position: relative;
+  overflow: hidden;
+}
+
+.container {
+  max-width: 1440px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: center;
+  gap: 4rem;
+}
+
+.content {
+  order: 2;
+}
+
+.subtitle {
+  color: var(--secondary);
+  font-size: 0.875rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  margin-bottom: 1.5rem;
+  display: block;
+}
+
+.title {
+  font-size: 3rem;
+  color: var(--on-surface);
+  margin-bottom: 2.5rem;
+  line-height: 1.2;
+  font-style: italic;
+}
+
+.textWrapper {
+  color: var(--on-surface-variant);
+  line-height: 2;
+  font-size: 1.125rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.signature {
+  margin-top: 3rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.line {
+  width: 3rem;
+  height: 1px;
+  background-color: rgba(114, 90, 57, 0.4);
+}
+
+.signature span {
+  font-family: var(--font-headline);
+  font-style: italic;
+  color: var(--primary);
+}
+
+.visual {
+  order: 1;
+}
+
+.visualWrapper {
+  position: relative;
+}
+
+.frame {
+  position: absolute;
+  top: -1rem;
+  left: -1rem;
+  right: -1rem;
+  bottom: -1rem;
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-xl);
+  transform: rotate(-2deg);
+  z-index: 0;
+}
+
+.image {
+  border-radius: var(--radius-xl);
+  width: 100%;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 20px 40px -10px rgba(47, 52, 48, 0.05);
+}
+
+.quoteCard {
+  display: none;
+  position: absolute;
+  bottom: -2rem;
+  left: -2rem;
+  background-color: var(--secondary-container);
+  padding: 2rem;
+  border-radius: var(--radius-xl);
+  max-width: 20rem;
+  z-index: 2;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.quoteCard p {
+  color: var(--on-secondary-container);
+  font-family: var(--font-headline);
+  font-style: italic;
+  font-size: 1.25rem;
+}
+
+@media (min-width: 1024px) {
+  .container {
+    grid-template-columns: 5fr 7fr;
+    gap: 6rem;
+  }
+  .content {
+    order: 1;
+  }
+  .visual {
+    order: 2;
+  }
+  .quoteCard {
+    display: block;
+  }
+}
+
+@media (max-width: 768px) {
+  .section {
+    padding: 5rem 1.5rem;
+  }
+  .title {
+    font-size: 2.25rem;
+  }
+}

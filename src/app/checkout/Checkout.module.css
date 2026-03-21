@@ -1,0 +1,201 @@
+.page {
+  padding: 10rem 4rem 6rem;
+  background-color: var(--surface);
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.title {
+  font-family: var(--font-headline);
+  font-size: 2.5rem;
+  color: var(--on-surface);
+  margin-bottom: 3rem;
+  text-align: center;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4rem;
+}
+
+@media (min-width: 1024px) {
+  .layout {
+    grid-template-columns: 1.5fr 1fr;
+  }
+}
+
+.sectionTitle {
+  font-family: var(--font-headline);
+  font-size: 1.5rem;
+  color: var(--primary);
+  margin-bottom: 2rem;
+  border-bottom: 1px solid var(--outline-variant);
+  padding-bottom: 1rem;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  background-color: var(--surface-container-low);
+  padding: 3rem;
+  border-radius: var(--radius-xl);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.label {
+  font-size: 0.875rem;
+  color: var(--on-surface-variant);
+  font-weight: 600;
+}
+
+.input, .select {
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--outline-variant);
+  background-color: var(--surface-container-lowest);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--on-surface);
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.input:focus, .select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(114, 90, 57, 0.1);
+}
+
+.summaryPanel {
+  background-color: var(--surface-container-highest);
+  padding: 3rem;
+  border-radius: var(--radius-xl);
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  height: fit-content;
+}
+
+.itemList {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.itemInfo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.itemImage {
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  background-color: var(--surface-container-low);
+}
+
+.itemName {
+  font-weight: 600;
+  color: var(--on-surface);
+}
+
+.itemQty {
+  color: var(--on-surface-variant);
+  font-size: 0.875rem;
+}
+
+.itemPrice {
+  font-weight: 700;
+  color: var(--on-surface);
+}
+
+.totalSection {
+  border-top: 1px dashed var(--outline);
+  padding-top: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.totalLabel {
+  font-size: 1.25rem;
+  color: var(--on-surface-variant);
+}
+
+.totalAmount {
+  font-family: var(--font-headline);
+  font-size: 2rem;
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.submitBtn {
+  width: 100%;
+  padding: 1.25rem;
+  background-color: var(--primary);
+  color: var(--on-primary);
+  font-size: 1.125rem;
+  font-weight: 700;
+  border-radius: var(--radius-xl);
+  transition: background-color 0.3s, transform 0.2s;
+  cursor: pointer;
+  text-align: center;
+  border: none;
+}
+
+.submitBtn:hover {
+  background-color: var(--primary-dim);
+}
+
+.submitBtn:active {
+  transform: scale(0.98);
+}
+
+.emptyState {
+  text-align: center;
+  padding: 4rem 0;
+  color: var(--on-surface-variant);
+}
+
+.emptyState p {
+  margin-bottom: 2rem;
+}
+
+.backBtn {
+  display: inline-block;
+  padding: 0.75rem 2rem;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  border-radius: var(--radius-full);
+  transition: all 0.3s;
+  font-weight: bold;
+}
+
+.backBtn:hover {
+  background-color: var(--primary);
+  color: var(--on-primary);
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding: 6rem 1.5rem 4rem;
+  }
+}

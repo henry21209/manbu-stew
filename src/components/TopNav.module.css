@@ -1,0 +1,89 @@
+.nav {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 50;
+  background-color: rgba(250, 249, 246, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: background-color 0.3s;
+}
+
+.container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 1.5rem 4rem;
+}
+
+.logo {
+  font-family: var(--font-headline);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.links {
+  display: flex;
+  gap: 3rem;
+  align-items: center;
+}
+
+.links a {
+  color: rgba(47, 52, 48, 0.7);
+  font-weight: 400;
+  transition: color 0.3s;
+}
+
+.links a:hover {
+  color: var(--primary);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  color: var(--primary);
+}
+
+.iconBtn {
+  position: relative;
+  transition: transform 0.2s ease;
+  color: var(--primary);
+}
+
+.badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background-color: var(--primary);
+  color: var(--surface);
+  font-size: 0.65rem;
+  font-weight: 700;
+  height: 18px;
+  min-width: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  padding: 0 4px;
+}
+
+.iconBtn:hover {
+  transform: scale(1.05);
+}
+
+.iconBtn:active {
+  transform: scale(0.95);
+}
+
+@media (max-width: 768px) {
+  .links {
+    display: none;
+  }
+  .container {
+    padding: 1.5rem 1.5rem;
+  }
+}

@@ -1,0 +1,47 @@
+[
+    {
+        "id": "prod_stew_001",
+        "name": "麻油猴頭菇慢燉鮮湯",
+        "category": "慢燉系列",
+        "price": 280,
+        "originalPrice": 320,
+        "description": "嚴選厚實猴頭菇與冷壓黑麻油，文火慢燉三小時，溫潤不燥熱。",
+        "tags": [
+            "純素",
+            "溫補",
+            "熱銷"
+        ],
+        "stockStatus": "in_stock",
+        "imageUrl": "https://images.unsplash.com/photo-1547592180-85f173990554?q=80&w=800&auto=format&fit=crop"
+    },
+    {
+        "id": "prod_soup_001",
+        "name": "桂花雪梨銀耳甜湯",
+        "category": "節氣湯品",
+        "price": 150,
+        "originalPrice": 150,
+        "description": "秋分限定。以南庄桂花與小農雪梨熬煮，口感滑順，安神潤肺。",
+        "tags": [
+            "純素",
+            "甜品",
+            "秋季限定"
+        ],
+        "stockStatus": "low_stock",
+        "imageUrl": "https://images.unsplash.com/photo-1605282717698-d2fd650d53c2?q=80&w=800&auto=format&fit=crop"
+    },
+    {
+        "id": "prod_gift_001",
+        "name": "【歲月靜好】純素年節禮盒",
+        "category": "年節禮盒",
+        "price": 1280,
+        "originalPrice": 1500,
+        "description": "包含六款經典慢燉湯品與手工素肉乾，牛皮紙盒溫柔包裝，傳遞質樸心意。",
+        "tags": [
+            "禮盒",
+            "免運",
+            "預購"
+        ],
+        "stockStatus": "pre_order",
+        "imageUrl": "https://images.unsplash.com/photo-1512428559087-560fa5ceab42?q=80&w=800&auto=format&fit=crop"
+    }
+]
