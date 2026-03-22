@@ -235,12 +235,21 @@ export default function AdminPage() {
         throw new Error("價格必須為大於等於 0 的有效數字");
       }
 
+      const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+      const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+
+      if (!cloudName || !uploadPreset) {
+        const errorMsg = "Cloudinary 環境變數遺失，請檢查設定參數。";
+        console.error(errorMsg, { cloudName, uploadPreset });
+        throw new Error(errorMsg);
+      }
+
       setIsUploading(true);
       const formData = new FormData();
       formData.append("file", imageFile);
-      formData.append("upload_preset", "manbu_preset");
+      formData.append("upload_preset", uploadPreset);
       
-      const uploadRes = await fetch("https://api.cloudinary.com/v1_1/dbtrfpmoj/image/upload", {
+      const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
         method: "POST",
         body: formData,
       });
@@ -293,12 +302,21 @@ export default function AdminPage() {
 
       let finalImageUrl = editingProduct.imageUrl;
       if (imageFile) {
+        const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+        const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+
+        if (!cloudName || !uploadPreset) {
+          const errorMsg = "Cloudinary 環境變數遺失，請檢查設定參數。";
+          console.error(errorMsg, { cloudName, uploadPreset });
+          throw new Error(errorMsg);
+        }
+
         setIsUploading(true);
         const formData = new FormData();
         formData.append("file", imageFile);
-        formData.append("upload_preset", "manbu_preset");
+        formData.append("upload_preset", uploadPreset);
         
-        const uploadRes = await fetch("https://api.cloudinary.com/v1_1/dbtrfpmoj/image/upload", {
+        const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
           method: "POST",
           body: formData,
         });
