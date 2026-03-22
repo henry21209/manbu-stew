@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import styles from './ProductGrid.module.css';
 import { useCart } from '@/context/CartContext';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 type Product = {
@@ -20,13 +20,54 @@ export default function ProductGrid() {
   const [productsData, setProductsData] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // 分類相關 state
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+  const [activeCategory, setActiveCategory] = useState<string>('All');
+
+  // 排序相關 state
+  const [sortOrder, setSortOrder] = useState<string>('default');
+
+  // 抓取所有分類
+  useEffect(() => {
+    async function fetchCategories() {
+      try {
+        const q = query(collection(db, 'categories')); // 可視需求改為 query(..., orderBy('order'))
+        const querySnapshot = await getDocs(q);
+        const categoriesList: { id: string; name: string }[] = [];
+        querySnapshot.forEach((doc) => {
+          // 若分類有 name 欄位則使用，否則使用 doc.id
+          const name = doc.data().name || doc.id;
+          categoriesList.push({ id: doc.id, name });
+        });
+        setCategories(categoriesList);
+      } catch (error) {
+        console.error("Failed to fetch categories:", error);
+      }
+    }
+
+    fetchCategories();
+  }, []);
+
+  // 抓取商品並依賴 activeCategory 與 sortOrder
   useEffect(() => {
     async function fetchProducts() {
+      setIsLoading(true);
       try {
-        const q = query(
-          collection(db, 'products'),
+        const constraints: any[] = [
           where('isAvailable', '==', true)
-        );
+        ];
+
+        if (activeCategory !== 'All') {
+          constraints.push(where('category', '==', activeCategory));
+        }
+
+        if (sortOrder === 'price_asc') {
+          constraints.push(orderBy('price', 'asc'));
+        } else if (sortOrder === 'price_desc') {
+          constraints.push(orderBy('price', 'desc'));
+        }
+
+        const q = query(collection(db, 'products'), ...constraints);
         const querySnapshot = await getDocs(q);
         const productsList: Product[] = [];
         querySnapshot.forEach((doc) => {
@@ -41,15 +82,15 @@ export default function ProductGrid() {
           });
         });
         setProductsData(productsList);
-      } catch (error) {
-        console.error("Failed to fetch products:", error);
+      } catch (error: any) {
+        console.error("Failed to fetch products. This might be due to a missing Firestore composite index:", error);
       } finally {
         setIsLoading(false);
       }
     }
 
     fetchProducts();
-  }, []);
+  }, [activeCategory, sortOrder]);
   return (
     <section className={styles.section}>
       <div className={styles.container}>
@@ -62,13 +103,46 @@ export default function ProductGrid() {
           <a href="#" className={styles.link}>查看全部</a>
         </div>
 
+        {/* 分類切換按鈕與排序 */}
+        <div className={styles.controlsContainer}>
+          <div className={styles.tabsContainer}>
+            <button
+              className={`${styles.tabBtn} ${activeCategory === 'All' ? styles.tabBtnActive : ''}`}
+              onClick={() => setActiveCategory('All')}
+            >
+              全部商品
+            </button>
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                className={`${styles.tabBtn} ${activeCategory === cat.name ? styles.tabBtnActive : ''}`}
+                onClick={() => setActiveCategory(cat.name)}
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
+
+          <div className={styles.sortContainer}>
+            <select
+              className={styles.sortSelect}
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value)}
+            >
+              <option value="default">預設排序</option>
+              <option value="price_asc">價格：由低到高</option>
+              <option value="price_desc">價格：由高到低</option>
+            </select>
+          </div>
+        </div>
+
         {isLoading ? (
           <div className={styles.loadingState}>
             商品載入中...
           </div>
         ) : productsData.length === 0 ? (
           <div className={styles.loadingState} style={{ gridColumn: '1 / -1', color: 'var(--on-surface-variant)', fontStyle: 'italic' }}>
-            目前暫無商品
+            目前此分類暫無商品
           </div>
         ) : (
           <div className={styles.grid}>

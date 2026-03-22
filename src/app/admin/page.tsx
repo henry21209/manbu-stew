@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Fragment } from "react";
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged, User } from "firebase/auth";
-import { collection, getDocs, doc, getDoc, updateDoc, addDoc, deleteDoc, query, orderBy } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc, updateDoc, addDoc, deleteDoc, query, orderBy, writeBatch } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import Link from "next/link";
 
@@ -340,14 +340,44 @@ export default function AdminPage() {
   };
 
   const handleAddCategory = async () => {
-    if (!newCategoryName.trim()) return;
+    const inputValue = newCategoryName.trim();
+    if (!inputValue) return;
+    
     setIsAddingCategory(true);
     try {
-      const docRef = await addDoc(collection(db, "categories"), { name: newCategoryName.trim() });
-      setCategories(prev => [...prev, { id: docRef.id, name: newCategoryName.trim() }]);
+      // 支援逗號 (半形/全形) 或換行符號切割，過濾掉空白
+      const namesArray = inputValue
+        .split(/[,，\n]+/)
+        .map(name => name.trim())
+        .filter(name => name.length > 0);
+
+      if (namesArray.length === 0) {
+        setIsAddingCategory(false);
+        return;
+      }
+
+      const batch = writeBatch(db);
+      
+      namesArray.forEach(name => {
+        // 使用 doc() 指定 document id，避免重複名稱產生多筆相同的 doc
+        const categoryRef = doc(db, 'categories', name);
+        batch.set(categoryRef, { name });
+      });
+
+      await batch.commit();
+
+      // 新增成功後重新抓取最新分類列表
+      const querySnapshot = await getDocs(collection(db, "categories"));
+      const fetchedCategories: Category[] = [];
+      querySnapshot.forEach((docSnap) => {
+        fetchedCategories.push({ id: docSnap.id, ...docSnap.data() } as Category);
+      });
+      setCategories(fetchedCategories);
+
       setNewCategoryName("");
+      alert(`成功新增 ${namesArray.length} 個分類！`);
     } catch (error) {
-      console.error("Error adding category:", error);
+      console.error("Error adding categories:", error);
       alert("新增分類失敗");
     } finally {
       setIsAddingCategory(false);
@@ -618,13 +648,13 @@ export default function AdminPage() {
                       {isAddingProduct ? '取消新增' : '＋ 新增商品'}
                     </button>
                     
-                    <div className={styles.categoryManager}>
-                      <input 
-                        type="text" 
-                        placeholder="新分類名稱" 
+                    <div className={styles.categoryManager} style={{ alignItems: 'flex-start' }}>
+                      <textarea 
+                        placeholder="可一次輸入多個分類，請以逗號或換行分隔（例如：湯品, 禮盒, 甜點）" 
                         value={newCategoryName} 
                         onChange={(e) => setNewCategoryName(e.target.value)} 
                         className={styles.smallInput} 
+                        style={{ resize: 'vertical', minHeight: '60px', width: '300px' }}
                       />
                       <button onClick={handleAddCategory} disabled={isAddingCategory || !newCategoryName.trim()} className={styles.toggleBtn}>
                         {isAddingCategory ? '...' : '＋ 新增分類'}
