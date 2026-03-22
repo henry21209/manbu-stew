@@ -5,7 +5,7 @@ import { useCart } from '@/context/CartContext';
 import styles from './Checkout.module.css';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import TopNav from '@/components/TopNav';
 import Footer from '@/components/Footer';
@@ -22,6 +22,30 @@ export default function CheckoutPage() {
     setIsSubmitting(true);
     
     try {
+      let secureTotalPrice = 0;
+
+      // 實作後端價格與狀態校驗
+      for (const item of cart) {
+        const productRef = doc(db, 'products', item.id);
+        const productSnap = await getDoc(productRef);
+
+        if (!productSnap.exists()) {
+          alert('商品價格或狀態已變動，請重新確認購物車');
+          setIsSubmitting(false);
+          return;
+        }
+
+        const productData = productSnap.data();
+
+        if (productData.isAvailable !== true || productData.price !== item.price) {
+          alert('商品價格或狀態已變動，請重新確認購物車');
+          setIsSubmitting(false);
+          return;
+        }
+
+        secureTotalPrice += productData.price * item.quantity;
+      }
+
       const formData = new FormData(e.currentTarget);
       const orderData = {
         buyer: {
@@ -31,7 +55,7 @@ export default function CheckoutPage() {
           payment: formData.get('payment'),
         },
         items: cart,
-        totalAmount: totalPrice,
+        totalAmount: secureTotalPrice,
         createdAt: new Date(),
         status: 'pending' // Optional status field
       };
