@@ -13,6 +13,7 @@ type Product = {
   price: number;
   imageUrl: string;
   category: string;
+  stock?: number;
 };
 
 export default function ProductGrid() {
@@ -79,6 +80,7 @@ export default function ProductGrid() {
             price: data.price,
             imageUrl: data.imageUrl,
             category: data.category,
+            stock: data.stock || 0,
           });
         });
         setProductsData(productsList);
@@ -169,9 +171,12 @@ export default function ProductGrid() {
                   {/* 將數字價格轉換為帶有千分位的字串，例如 1280 變成 1,280 */}
                   <span className={styles.price}>NT$ {p.price.toLocaleString()}</span>
                   <button 
-                    className={styles.addBtn}
+                    className={`${styles.addBtn} ${(p.stock ?? 0) <= 0 ? styles.disabledBtn : ''}`}
+                    disabled={(p.stock ?? 0) <= 0}
+                    style={{ opacity: (p.stock ?? 0) <= 0 ? 0.6 : 1, cursor: (p.stock ?? 0) <= 0 ? 'not-allowed' : 'pointer', transition: 'none' }}
                     onClick={(e) => {
                       e.stopPropagation();
+                      if ((p.stock ?? 0) <= 0) return;
                       addToCart({ 
                         id: p.id, 
                         name: p.name, 
@@ -180,7 +185,7 @@ export default function ProductGrid() {
                       });
                     }}
                   >
-                    <span className="material-symbols-outlined material-icons-filled">add_circle</span>
+                    {(p.stock ?? 0) <= 0 ? <span style={{fontSize: '0.8rem', fontWeight: 600, padding: '0 8px'}}>售完補貨中</span> : <span className="material-symbols-outlined material-icons-filled">add_circle</span>}
                   </button>
                 </div>
               </div>

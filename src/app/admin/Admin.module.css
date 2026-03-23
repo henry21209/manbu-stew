@@ -490,12 +490,201 @@
   font-weight: 600;
   transition: all 0.3s;
   cursor: pointer;
+  border-radius: 8px;
+  padding: 15px;
+  margin-top: 1rem;
 }
 
-.logoutBtn:hover {
-  border-color: var(--error);
-  color: var(--error);
+.itemsTitle {
+  font-size: 0.875rem;
+  color: var(--on-surface);
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.itemsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none; 
+}
+
+.smallItem {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  color: var(--on-surface-variant);
+  background: white;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  border: 1px solid #f0f0f0;
+}
+
+.itemName {
+  font-weight: 600;
+  color: var(--on-surface);
+}
+
+.buyerName {
+  font-weight: 600;
+  color: var(--on-surface);
+  margin-bottom: 0.25rem;
+}
+
+.buyerPhone {
+  font-size: 0.875rem;
+  color: var(--on-surface-variant);
+}
+
+.totalPrice {
+  font-weight: 800;
+  font-size: 1.125rem;
+  color: var(--primary);
+  white-space: nowrap;
+}
+
+.statusBadge {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-full);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.statusPending {
+  background-color: var(--surface-container-highest);
+  color: var(--on-surface-variant);
+}
+
+.statusShipped {
+  background-color: var(--secondary-container);
+  color: var(--on-secondary-container);
+}
+
+.statusCancelled {
+  background-color: var(--surface-container-high);
+  color: var(--on-surface-variant);
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.shipBtn {
+  background-color: var(--primary);
+  color: var(--on-primary);
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+  white-space: nowrap;
+}
+
+.shipBtn:hover:not(:disabled) {
+  background-color: var(--primary-dim);
+}
+
+.shipBtn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.shipBtn:disabled {
+  background-color: var(--outline-variant);
+  cursor: not-allowed;
+}
+
+.doneText {
+  color: var(--secondary);
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+.noData {
+  text-align: center;
+  padding: 4rem;
+  color: var(--on-surface-variant);
+  font-style: italic;
+}
+
+.toggleBtn {
+  background-color: transparent;
+  color: var(--on-surface-variant);
+  border: 1px solid var(--outline);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  white-space: nowrap;
+}
+
+.toggleBtn:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
   background-color: var(--surface-container-low);
+}
+
+.toggleBtn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.toggleBtn:disabled {
+  border-color: var(--outline-variant);
+  color: var(--outline-variant);
+  cursor: not-allowed;
+}
+
+.deleteDangerBtn {
+  background-color: var(--error);
+  color: var(--on-error);
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  white-space: nowrap;
+  margin-left: 2rem;
+  box-shadow: 0 4px 10px rgba(186, 26, 26, 0.2);
+}
+
+.deleteDangerBtn:hover:not(:disabled) {
+  filter: brightness(0.9);
+  transform: translateY(-1px);
+}
+
+.deleteDangerBtn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.deleteDangerBtn:disabled {
+  background-color: var(--outline-variant);
+  color: var(--surface-container);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.logoutBtn {
+  padding: 0.75rem 2rem;
+  border: 1px solid var(--outline);
+  color: var(--on-surface-variant);
+  background-color: transparent;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  transition: all 0.3s;
+  cursor: pointer;
 }
 
 .sectionDivider {
@@ -545,6 +734,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1.5rem;
+  padding-bottom: 2rem;
 }
 
 .fieldGroup {
@@ -561,7 +751,48 @@
   grid-column: span 2;
   display: flex;
   justify-content: flex-end;
+  gap: 1rem;
   margin-top: 1rem;
+}
+
+.btnBase {
+  height: 40px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btnPrimary {
+  background-color: var(--primary);
+  color: var(--on-primary);
+  border: none;
+  padding: 0 1.5rem;
+}
+
+.btnPrimary:hover:not(:disabled) {
+  background-color: var(--primary-dim);
+}
+
+.btnPrimary:disabled {
+  background-color: var(--outline-variant);
+  cursor: not-allowed;
+}
+
+.btnSecondary {
+  background-color: transparent;
+  color: #333;
+  border: 1px solid #ccc;
+  padding: 0 1.5rem;
+}
+
+.btnSecondary:hover {
+  background-color: var(--surface-container-low);
 }
 
 @media (max-width: 768px) {
@@ -592,4 +823,116 @@
   .dashboardCard {
     width: 100%;
   }
+}
+
+.revenuePanel {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 30px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  border: 1px solid #eee;
+}
+
+.revenueTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+.revenueControls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.revenueField {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.revenueField label {
+  font-weight: 500;
+  color: #555;
+}
+
+.revenueCard {
+  background: #fdfbf7;
+  padding: 15px 30px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  border: 1px solid #e8e0d5;
+}
+
+.revenueLabel {
+  font-size: 0.9rem;
+  color: #777;
+  margin-bottom: 5px;
+}
+
+.revenueAmount {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #d35400;
+}
+
+.chartContainer {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 30px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  border: 1px solid #eee;
+}
+
+.chartTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #444;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.trendControls {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.trendControls select {
+  max-width: 300px;
+  width: 100%;
+}
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modalContent {
+  background: var(--surface-container-lowest);
+  border-radius: var(--radius-xl);
+  padding: 2.5rem;
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
 }

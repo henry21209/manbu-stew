@@ -2,9 +2,10 @@
 
 import { useState, useEffect, Fragment } from "react";
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged, User } from "firebase/auth";
-import { collection, getDocs, doc, getDoc, updateDoc, addDoc, deleteDoc, query, orderBy, writeBatch } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc, updateDoc, addDoc, deleteDoc, query, orderBy, writeBatch, where } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import Link from "next/link";
+import { BarChart, Bar, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 type OrderItem = {
   id: string;
@@ -25,6 +26,7 @@ type Order = {
   totalAmount: number;
   status: string;
   createdAt: any; 
+  orderMonth?: string;
 };
 
 type ShopProduct = {
@@ -33,9 +35,10 @@ type ShopProduct = {
   price: number;
   imageUrl: string;
   category: string;
-  isAvailable?: boolean;
   description?: string;
   tags?: string[];
+  stock?: number;
+  isAvailable?: boolean;
 };
 
 type Category = {
@@ -59,6 +62,16 @@ export default function AdminPage() {
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
 
+  // Revenue Analysis State
+  const [selectedMonth, setSelectedMonth] = useState<string>(
+    new Date().toISOString().slice(0, 7)
+  );
+
+  // Trend Analysis State
+  const [selectedTrendProduct, setSelectedTrendProduct] = useState<string>("");
+  const [trendOrders, setTrendOrders] = useState<Order[]>([]);
+  const [isLoadingTrend, setIsLoadingTrend] = useState(false);
+
   const [products, setProducts] = useState<ShopProduct[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
   const [updatingProductId, setUpdatingProductId] = useState<string | null>(null);
@@ -69,10 +82,12 @@ export default function AdminPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [newProduct, setNewProduct] = useState({
     name: "",
-    price: "",
+    price: 0,
     category: "",
     description: "",
     tags: "",
+    stock: 0,
+    isAvailable: true,
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   
@@ -83,7 +98,7 @@ export default function AdminPage() {
   const [isAddingCategory, setIsAddingCategory] = useState(false);
 
   // Tab Routing
-  const [activeTab, setActiveTab] = useState<'orders' | 'products'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'analytics' | 'products'>('orders');
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -124,25 +139,88 @@ export default function AdminPage() {
     }
   };
 
+  const fetchOrders = async () => {
+    if (!user) return;
+    setIsLoadingOrders(true);
+    try {
+      let q;
+      if (activeTab === 'analytics' && selectedMonth) {
+        q = query(
+          collection(db, "orders"), 
+          where('orderMonth', '==', selectedMonth), 
+          orderBy("createdAt", "desc")
+        );
+      } else {
+        q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
+      }
+      
+      const querySnapshot = await getDocs(q);
+      const fetchedOrders: Order[] = [];
+      querySnapshot.forEach((docSnap) => {
+        fetchedOrders.push({ id: docSnap.id, ...docSnap.data() } as Order);
+      });
+      setOrders(fetchedOrders);
+    } catch (error: any) {
+      console.error("Error fetching orders:", error);
+      if (error.message && error.message.includes('index')) {
+        alert('Firestore 需要建立複合索引才能支援此查詢。請看 Console 的錯誤訊息，點擊連結即可自動在 Firebase 建立該索引。');
+      }
+    } finally {
+      setIsLoadingOrders(false);
+    }
+  };
+
+  const getLast6Months = () => {
+    const months = [];
+    const d = new Date();
+    d.setDate(1); // Set to 1st to avoid end-of-month skipping issues
+    for (let i = 5; i >= 0; i--) {
+      const pastDate = new Date(d);
+      pastDate.setMonth(d.getMonth() - i);
+      months.push(`${pastDate.getFullYear()}-${String(pastDate.getMonth() + 1).padStart(2, '0')}`);
+    }
+    return months;
+  };
+  const last6Months = getLast6Months();
+
+  const fetchTrendOrders = async () => {
+    if (!user || activeTab !== 'analytics') return;
+    setIsLoadingTrend(true);
+    try {
+      const sixMonthsAgo = last6Months[0]; // oldest month
+      const q = query(
+        collection(db, "orders"),
+        where('orderMonth', '>=', sixMonthsAgo),
+        orderBy('orderMonth', 'asc') // This requires an index possibly, but usually where on str implies order
+      );
+      const querySnapshot = await getDocs(q);
+      const fetchedOrders: Order[] = [];
+      querySnapshot.forEach((docSnap) => {
+        fetchedOrders.push({ id: docSnap.id, ...docSnap.data() } as Order);
+      });
+      setTrendOrders(fetchedOrders);
+    } catch (error: any) {
+      console.error("Error fetching trend orders:", error);
+      if (error.message && error.message.includes('index')) {
+        alert('Firestore 需要建立複合索引： orderMonth (asc) 才能支援趨勢查詢。');
+      }
+    } finally {
+      setIsLoadingTrend(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+  }, [user, activeTab, selectedMonth]);
+
+  useEffect(() => {
+    if (activeTab === 'analytics') {
+      fetchTrendOrders();
+    }
+  }, [user, activeTab]);
+
   useEffect(() => {
     if (!user) return;
-
-    async function fetchOrders() {
-      setIsLoadingOrders(true);
-      try {
-        const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
-        const querySnapshot = await getDocs(q);
-        const fetchedOrders: Order[] = [];
-        querySnapshot.forEach((docSnap) => {
-          fetchedOrders.push({ id: docSnap.id, ...docSnap.data() } as Order);
-        });
-        setOrders(fetchedOrders);
-      } catch (error) {
-        console.error("Error fetching orders:", error);
-      } finally {
-        setIsLoadingOrders(false);
-      }
-    }
 
     async function fetchCategories() {
       try {
@@ -157,7 +235,6 @@ export default function AdminPage() {
       }
     }
 
-    fetchOrders();
     fetchProducts();
     fetchCategories();
   }, [user]);
@@ -265,6 +342,7 @@ export default function AdminPage() {
       const productData = {
         name: newProduct.name,
         price: priceNum,
+        stock: Number(newProduct.stock) || 0,
         category: newProduct.category,
         description: newProduct.description,
         imageUrl: secureUrl,
@@ -276,7 +354,7 @@ export default function AdminPage() {
       
       await fetchProducts();
       
-      setNewProduct({ name: "", price: "", category: "", description: "", tags: "" });
+      setNewProduct({ name: "", price: 0, category: "", description: "", tags: "", stock: 0, isAvailable: true });
       setImageFile(null);
       setIsAddingProduct(false);
       alert("商品新增成功！");
@@ -286,6 +364,7 @@ export default function AdminPage() {
       setIsUploading(false);
     } finally {
       setIsSubmittingProduct(false);
+      setUpdatingProductId(null);
     }
   };
 
@@ -333,6 +412,7 @@ export default function AdminPage() {
       const updateData = {
         name: newProduct.name,
         price: priceNum,
+        stock: Number(newProduct.stock) || 0,
         category: newProduct.category,
         description: newProduct.description,
         imageUrl: finalImageUrl,
@@ -346,7 +426,7 @@ export default function AdminPage() {
       
       setEditingProduct(null);
       setImageFile(null);
-      setNewProduct({ name: "", price: "", category: "", description: "", tags: "" });
+      setNewProduct({ name: "", price: 0, category: "", description: "", tags: "", stock: 0, isAvailable: true });
       alert("商品修改成功！");
     } catch (error: any) {
       console.error("Error updating product:", error);
@@ -354,7 +434,24 @@ export default function AdminPage() {
       setIsUploading(false);
     } finally {
       setIsSubmittingProduct(false);
+      setUpdatingProductId(null);
     }
+  };
+
+  const handleEditProductClick = (product: ShopProduct) => {
+    setUpdatingProductId(product.id);
+    setEditingProduct(product);
+    setNewProduct({
+      name: product.name,
+      category: product.category,
+      price: product.price,
+      description: product.description || "",
+      tags: product.tags ? product.tags.join(", ") : "",
+      stock: product.stock || 0,
+      isAvailable: product.isAvailable ?? true,
+    });
+    setIsAddingProduct(false);
+    setImageFile(null);
   };
 
   const handleAddCategory = async () => {
@@ -363,7 +460,6 @@ export default function AdminPage() {
     
     setIsAddingCategory(true);
     try {
-      // 支援逗號 (半形/全形) 或換行符號切割，過濾掉空白
       const namesArray = inputValue
         .split(/[,，\n]+/)
         .map(name => name.trim())
@@ -375,16 +471,12 @@ export default function AdminPage() {
       }
 
       const batch = writeBatch(db);
-      
       namesArray.forEach(name => {
-        // 使用 doc() 指定 document id，避免重複名稱產生多筆相同的 doc
         const categoryRef = doc(db, 'categories', name);
         batch.set(categoryRef, { name });
       });
-
       await batch.commit();
 
-      // 新增成功後重新抓取最新分類列表
       const querySnapshot = await getDocs(collection(db, "categories"));
       const fetchedCategories: Category[] = [];
       querySnapshot.forEach((docSnap) => {
@@ -392,12 +484,12 @@ export default function AdminPage() {
       });
       setCategories(fetchedCategories);
 
+      setNewProduct(prev => ({ ...prev, category: namesArray[0] }));
       setNewCategoryName("");
-      alert(`成功新增 ${namesArray.length} 個分類！`);
+      setIsAddingCategory(false);
     } catch (error) {
       console.error("Error adding categories:", error);
       alert("新增分類失敗");
-    } finally {
       setIsAddingCategory(false);
     }
   };
@@ -537,6 +629,12 @@ export default function AdminPage() {
                   訂單管理
                 </button>
                 <button 
+                  className={`${styles.tabBtn} ${activeTab === 'analytics' ? styles.tabActive : ''}`}
+                  onClick={() => setActiveTab('analytics')}
+                >
+                  營運分析
+                </button>
+                <button 
                   className={`${styles.tabBtn} ${activeTab === 'products' ? styles.tabActive : ''}`}
                   onClick={() => setActiveTab('products')}
                 >
@@ -652,37 +750,148 @@ export default function AdminPage() {
                 </div>
               )}
 
-              {activeTab === 'products' && (
+              {activeTab === 'analytics' && (
                 <div className={styles.dashboardContent}>
-                  <div className={styles.actionRow}>
-                    <button 
-                      onClick={() => {
-                        setIsAddingProduct(!isAddingProduct);
-                        setEditingProduct(null);
-                        setNewProduct({ name: "", price: "", category: "", description: "", tags: "" });
-                      }} 
-                      className={styles.primaryBtn}
-                    >
-                      {isAddingProduct ? '取消新增' : '＋ 新增商品'}
-                    </button>
-                    
-                    <div className={styles.categoryManager} style={{ alignItems: 'flex-start' }}>
-                      <textarea 
-                        placeholder="可一次輸入多個分類，請以逗號或換行分隔（例如：湯品, 禮盒, 甜點）" 
-                        value={newCategoryName} 
-                        onChange={(e) => setNewCategoryName(e.target.value)} 
-                        className={styles.smallInput} 
-                        style={{ resize: 'vertical', minHeight: '60px', width: '300px' }}
-                      />
-                      <button onClick={handleAddCategory} disabled={isAddingCategory || !newCategoryName.trim()} className={styles.toggleBtn}>
-                        {isAddingCategory ? '...' : '＋ 新增分類'}
-                      </button>
+                  {/* Revenue Analysis Panel */}
+                  <div className={styles.revenuePanel}>
+                    <h2 className={styles.revenueTitle}>營收分析面板</h2>
+                    <div className={styles.revenueControls}>
+                      <div className={styles.revenueField}>
+                        <label>分析月份：</label>
+                        <input 
+                          type="month" 
+                          value={selectedMonth} 
+                          onChange={(e) => setSelectedMonth(e.target.value)}
+                          className={styles.input}
+                          style={{ maxWidth: '200px' }}
+                        />
+                      </div>
+                      <div className={styles.revenueCard}>
+                        <span className={styles.revenueLabel}>該月總營收 ({selectedMonth || '全部'})</span>
+                        <span className={styles.revenueAmount}>
+                          NT$ {orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0).toLocaleString()}
+                        </span>
+                      </div>
                     </div>
                   </div>
                   
+                  {/* Recharts Analytics */}
+                  <div className={styles.chartContainer}>
+                    <h3 className={styles.chartTitle}>商品銷量統計</h3>
+                    {isLoadingOrders ? (
+                      <div className={styles.loadingOrders}>載入數據中...</div>
+                    ) : (() => {
+                      const productSales = orders.reduce((acc, order) => {
+                        if (!order.items) return acc;
+                        order.items.forEach(item => {
+                          if (!acc[item.name]) acc[item.name] = 0;
+                          acc[item.name] += item.quantity;
+                        });
+                        return acc;
+                      }, {} as Record<string, number>);
+                      
+                      const chartData = Object.entries(productSales)
+                        .map(([name, sales]) => ({ name, sales }))
+                        .sort((a, b) => b.sales - a.sales);
+                      
+                      if (chartData.length === 0) {
+                        return <div className={styles.noData}>此區間尚無商品銷售紀錄</div>;
+                      }
+                      
+                      return (
+                        <div style={{ width: '100%', height: 400 }}>
+                          <ResponsiveContainer>
+                            <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                              <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} interval={0} tick={{fontSize: 12}} />
+                              <YAxis allowDecimals={false} />
+                              <Tooltip cursor={{fill: '#f5f5f5'}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}} />
+                              <Bar dataKey="sales" name="銷量" fill="#d35400" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                  
+                  {/* Recharts Product Trend */}
+                  <div className={styles.chartContainer}>
+                    <h3 className={styles.chartTitle}>產品趨勢分析 (近半年)</h3>
+                    <div className={styles.trendControls}>
+                      <select 
+                        value={selectedTrendProduct} 
+                        onChange={(e) => setSelectedTrendProduct(e.target.value)}
+                        className={styles.input}
+                      >
+                        <option value="">請選擇分析商品...</option>
+                        {products.map(p => (
+                          <option key={p.id} value={p.name}>{p.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {isLoadingTrend ? (
+                      <div className={styles.loadingOrders}>載入趨勢數據中...</div>
+                    ) : selectedTrendProduct ? (
+                      (() => {
+                        const trendMap = last6Months.reduce((acc, m) => {
+                          acc[m] = 0;
+                          return acc;
+                        }, {} as Record<string, number>);
+
+                        trendOrders.forEach(order => {
+                          if (order.orderMonth && trendMap[order.orderMonth] !== undefined && order.items) {
+                             const matchingItem = order.items.find(item => item.name === selectedTrendProduct);
+                             if (matchingItem) {
+                               trendMap[order.orderMonth] += matchingItem.quantity;
+                             }
+                          }
+                        });
+
+                        const trendData = last6Months.map(month => ({
+                          month,
+                          sales: trendMap[month]
+                        }));
+
+                        return (
+                          <div style={{ width: '100%', height: 400, marginTop: '20px' }}>
+                            <ResponsiveContainer>
+                              <LineChart data={trendData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
+                                <XAxis dataKey="month" tick={{fontSize: 12}} />
+                                <YAxis allowDecimals={false} />
+                                <Tooltip contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}} />
+                                <Line type="monotone" dataKey="sales" name="銷量" stroke="#d35400" strokeWidth={3} dot={{r: 4}} activeDot={{r: 6}} />
+                              </LineChart>
+                            </ResponsiveContainer>
+                          </div>
+                        );
+                      })()
+                    ) : (
+                      <div className={styles.noData}>請自上方選單選擇一項產品以查看趨勢</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'products' && (
+                <div className={styles.dashboardContent}>
+                  <div className={styles.actionRow} style={{ alignItems: 'center' }}>
+                    <button 
+                      onClick={() => {
+                        setIsAddingProduct(true);
+                        setEditingProduct(null);
+                        setNewProduct({ name: "", price: 0, category: "", description: "", tags: "", isAvailable: true, stock: 0 });
+                      }} 
+                      className={styles.primaryBtn}
+                    >
+                      ＋ 新增商品
+                    </button>
+                  </div>
+                  
                   {(isAddingProduct || editingProduct) && (
-                  <div className={styles.addProductFormCard}>
-                    <h3 className={styles.formTitle}>{editingProduct ? '編輯商品' : '建立新商品'}</h3>
+                  <div className={styles.modalOverlay} onClick={() => { setEditingProduct(null); setIsAddingProduct(false); setUpdatingProductId(null); }}>
+                    <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
+                      <h3 className={styles.formTitle}>{editingProduct ? '編輯商品' : '建立新商品'}</h3>
                     <form className={styles.formRow} onSubmit={editingProduct ? handleUpdateProduct : handleAddProduct}>
                       <div className={styles.fieldGroup}>
                         <label className={styles.label}>商品名稱</label>
@@ -690,16 +899,45 @@ export default function AdminPage() {
                       </div>
                       <div className={styles.fieldGroup}>
                         <label className={styles.label}>價格 (NT$)</label>
-                        <input className={styles.input} type="number" required min="0" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: e.target.value})} />
+                        <input className={styles.input} type="number" required min="0" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: Number(e.target.value)})} />
+                      </div>
+                      <div className={styles.fieldGroup}>
+                        <label className={styles.label}>庫存數量</label>
+                        <input className={styles.input} type="number" required min="0" value={newProduct.stock} onChange={e => setNewProduct({...newProduct, stock: Number(e.target.value)})} />
                       </div>
                       <div className={styles.fieldGroup}>
                         <label className={styles.label}>分類</label>
-                        <select className={styles.input} required value={newProduct.category} onChange={e => setNewProduct({...newProduct, category: e.target.value})}>
-                          <option value="">請選擇</option>
-                          {categories.map(cat => (
-                            <option key={cat.id} value={cat.name}>{cat.name}</option>
-                          ))}
-                        </select>
+                        {!isAddingCategory ? (
+                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <select className={styles.input} style={{ flex: 1 }} required value={newProduct.category} onChange={e => setNewProduct({...newProduct, category: e.target.value})}>
+                              <option value="">{categories.length === 0 ? "載入分類中或無分類" : "請選擇"}</option>
+                              {categories.map(cat => (
+                                <option key={cat.id} value={cat.name}>{cat.name}</option>
+                              ))}
+                            </select>
+                            <button type="button" onClick={() => setIsAddingCategory(true)} className={styles.toggleBtn}>
+                              + 新增分類
+                            </button>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                            <input 
+                              className={styles.input} 
+                              style={{ flex: 1 }}
+                              type="text" 
+                              placeholder="輸入新分類名稱" 
+                              value={newCategoryName} 
+                              onChange={e => setNewCategoryName(e.target.value)} 
+                              autoFocus
+                            />
+                            <button type="button" onClick={handleAddCategory} disabled={!newCategoryName.trim()} className={`${styles.btnBase} ${styles.btnPrimary}`}>
+                              確定
+                            </button>
+                            <button type="button" onClick={() => { setIsAddingCategory(false); setNewCategoryName(""); }} className={`${styles.btnBase} ${styles.btnSecondary}`}>
+                              取消
+                            </button>
+                          </div>
+                        )}
                       </div>
                       <div className={styles.fieldGroup}>
                         <label className={styles.label}>描述</label>
@@ -724,16 +962,17 @@ export default function AdminPage() {
                         />
                       </div>
                       <div className={styles.formActions}>
-                        <button type="button" onClick={() => { setEditingProduct(null); setIsAddingProduct(false); }} className={styles.cancelBtn} style={{marginRight: '1rem'}}>
+                        <button type="button" onClick={() => { setEditingProduct(null); setIsAddingProduct(false); setUpdatingProductId(null); }} className={`${styles.btnBase} ${styles.btnSecondary}`}>
                           取消
                         </button>
-                        <button type="submit" className={styles.submitBtn} disabled={isSubmittingProduct}>
+                        <button type="submit" className={`${styles.btnBase} ${styles.btnPrimary}`} disabled={isSubmittingProduct}>
                           {isUploading ? '圖片上傳中...' : isSubmittingProduct ? '處理中...' : (editingProduct ? '儲存修改' : '確認新增')}
                         </button>
                       </div>
                     </form>
+                    </div>
                   </div>
-                )}
+                  )}
                 
                 {isLoadingProducts ? (
                   <div className={styles.loadingOrders}>正在載入商品...</div>
@@ -746,6 +985,7 @@ export default function AdminPage() {
                           <th>商品名稱</th>
                           <th>類別</th>
                           <th>價格</th>
+                          <th>庫存</th>
                           <th>狀態</th>
                           <th>操作</th>
                         </tr>
@@ -762,6 +1002,7 @@ export default function AdminPage() {
                               <td><div className={styles.buyerName}>{p.name}</div></td>
                               <td>{p.category}</td>
                               <td className={styles.totalPrice}>NT$ {p.price.toLocaleString()}</td>
+                              <td>{p.stock ?? 0}</td>
                               <td>
                                 <span className={`${styles.statusBadge} ${p.isAvailable === false ? styles.statusCancelled : styles.statusShipped}`}>
                                   {p.isAvailable === false ? '已下架' : '上架中'}
@@ -772,9 +1013,9 @@ export default function AdminPage() {
                                   <button 
                                     className={styles.shipBtn}
                                     disabled={updatingProductId === p.id}
-                                    onClick={() => handleEditPrice(p.id, p.price)}
+                                    onClick={() => handleEditProductClick(p)}
                                   >
-                                    修改價格
+                                    編輯商品
                                   </button>
                                   <button 
                                     className={styles.toggleBtn}

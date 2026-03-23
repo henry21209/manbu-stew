@@ -2,16 +2,18 @@
 
 import { useState } from 'react';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
 import styles from './Checkout.module.css';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { collection, addDoc, doc, getDoc } from 'firebase/firestore';
+import { collection, doc, runTransaction } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import TopNav from '@/components/TopNav';
 import Footer from '@/components/Footer';
 
 export default function CheckoutPage() {
   const { cart, totalPrice, clearCart } = useCart();
+  const { currentUser } = useAuth();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -19,48 +21,85 @@ export default function CheckoutPage() {
     e.preventDefault();
     if (cart.length === 0) return;
     
+    if (!currentUser) {
+      alert('請先登入會員以完成結帳');
+      return;
+    }
+    
+    // 取出 FormData，必須在 await 之前同步執行，否則 e.currentTarget 會變成 null
+    const formData = new FormData(e.currentTarget);
+    const buyerData = {
+      name: formData.get('name'),
+      phone: formData.get('phone'),
+      address: formData.get('address'),
+      payment: formData.get('payment'),
+    };
+
     setIsSubmitting(true);
     
     try {
-      let secureTotalPrice = 0;
+      await runTransaction(db, async (transaction) => {
+        let secureTotalPrice = 0;
+        const snapshotItems: any[] = [];
+        
+        // 1. 讀取階段 (Read Phase)
+        // 必須在所有 write 之前執行
+        const productDocs = await Promise.all(
+          cart.map(item => transaction.get(doc(db, 'products', item.id)))
+        );
 
-      // 實作後端價格與狀態校驗
-      for (const item of cart) {
-        const productRef = doc(db, 'products', item.id);
-        const productSnap = await getDoc(productRef);
+        // 2. 校驗階段 (Validation Phase)
+        cart.forEach((item, index) => {
+          const productSnap = productDocs[index];
+          if (!productSnap.exists()) {
+            throw new Error(`商品 ${item.name} 不存在`);
+          }
+          
+          const productData = productSnap.data();
+          if (productData.isAvailable !== true || productData.price !== item.price) {
+            throw new Error(`商品 ${item.name} 價格或狀態已變動，請重新確認購物車`);
+          }
+          
+          const currentStock = productData.stock || 0;
+          if (currentStock < item.quantity) {
+            throw new Error(`商品 ${item.name} 庫存不足 (剩餘: ${currentStock})`);
+          }
 
-        if (!productSnap.exists()) {
-          alert('商品價格或狀態已變動，請重新確認購物車');
-          setIsSubmitting(false);
-          return;
-        }
+          snapshotItems.push({
+            id: item.id,
+            name: productData.name,
+            price: productData.price,
+            quantity: item.quantity,
+            imageUrl: productData.imageUrl
+          });
+          secureTotalPrice += productData.price * item.quantity;
+        });
 
-        const productData = productSnap.data();
+        // 3. 寫入階段 (Write Phase)
+        // 扣減庫存
+        cart.forEach((item, index) => {
+          const productRef = doc(db, 'products', item.id);
+          const currentStock = productDocs[index].data()?.stock || 0;
+          transaction.update(productRef, { stock: currentStock - item.quantity });
+        });
 
-        if (productData.isAvailable !== true || productData.price !== item.price) {
-          alert('商品價格或狀態已變動，請重新確認購物車');
-          setIsSubmitting(false);
-          return;
-        }
+        // 建立新訂單資料
+        const now = new Date();
+        const orderMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        const orderData = {
+          userId: currentUser.uid,
+          userEmail: currentUser.email,
+          buyer: buyerData,
+          items: snapshotItems,
+          totalAmount: secureTotalPrice,
+          orderMonth: orderMonth,
+          createdAt: now,
+          status: 'pending'
+        };
 
-        secureTotalPrice += productData.price * item.quantity;
-      }
-
-      const formData = new FormData(e.currentTarget);
-      const orderData = {
-        buyer: {
-          name: formData.get('name'),
-          phone: formData.get('phone'),
-          address: formData.get('address'),
-          payment: formData.get('payment'),
-        },
-        items: cart,
-        totalAmount: secureTotalPrice,
-        createdAt: new Date(),
-        status: 'pending' // Optional status field
-      };
-
-      await addDoc(collection(db, 'orders'), orderData);
+        const newOrderRef = doc(collection(db, 'orders'));
+        transaction.set(newOrderRef, orderData);
+      });
       
       alert('訂單建立成功！');
       clearCart();
