@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import styles from './Checkout.module.css';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { collection, doc, runTransaction } from 'firebase/firestore';
+import { collection, doc, runTransaction, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import TopNav from '@/components/TopNav';
 import Footer from '@/components/Footer';
@@ -16,6 +16,28 @@ export default function CheckoutPage() {
   const { currentUser } = useAuth();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [buyerInfo, setBuyerInfo] = useState({ name: '', phone: '', address: '', payment: 'credit_card' });
+
+  useEffect(() => {
+    const fetchBuyerInfo = async () => {
+      if (!currentUser) return;
+      try {
+        const docSnap = await getDoc(doc(db, 'users', currentUser.uid));
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setBuyerInfo(prev => ({
+            ...prev,
+            name: data.name || '',
+            phone: data.phone || '',
+            address: data.address || ''
+          }));
+        }
+      } catch (err) {
+        console.error("Error fetching user defaults:", err);
+      }
+    };
+    fetchBuyerInfo();
+  }, [currentUser]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -132,22 +154,22 @@ export default function CheckoutPage() {
                 <form id="checkout-form" className={styles.form} onSubmit={handleSubmit}>
                   <div className={styles.field}>
                     <label className={styles.label} htmlFor="name">收件人姓名</label>
-                    <input className={styles.input} type="text" id="name" name="name" required placeholder="王大明" />
+                    <input className={styles.input} type="text" id="name" name="name" required value={buyerInfo.name} onChange={e => setBuyerInfo({...buyerInfo, name: e.target.value})} placeholder="王大明" />
                   </div>
                   
                   <div className={styles.field}>
                     <label className={styles.label} htmlFor="phone">聯絡電話</label>
-                    <input className={styles.input} type="tel" id="phone" name="phone" required placeholder="0912-345-678" />
+                    <input className={styles.input} type="tel" id="phone" name="phone" required value={buyerInfo.phone} onChange={e => setBuyerInfo({...buyerInfo, phone: e.target.value})} placeholder="0912-345-678" />
                   </div>
                   
                   <div className={styles.field}>
                     <label className={styles.label} htmlFor="address">配送地址</label>
-                    <input className={styles.input} type="text" id="address" name="address" required placeholder="台北市信義區..." />
+                    <input className={styles.input} type="text" id="address" name="address" required value={buyerInfo.address} onChange={e => setBuyerInfo({...buyerInfo, address: e.target.value})} placeholder="台北市信義區..." />
                   </div>
                   
                   <div className={styles.field}>
                     <label className={styles.label} htmlFor="payment">付款方式</label>
-                    <select className={styles.select} id="payment" name="payment" required>
+                    <select className={styles.select} id="payment" name="payment" required value={buyerInfo.payment} onChange={e => setBuyerInfo({...buyerInfo, payment: e.target.value})}>
                       <option value="credit_card">信用卡</option>
                       <option value="cash_on_delivery">貨到付款</option>
                     </select>

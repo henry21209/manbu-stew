@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
 type CartItem = {
   id: string;
@@ -24,6 +24,25 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    try {
+      const savedCart = localStorage.getItem('manbu-cart');
+      if (savedCart) {
+        setCart(JSON.parse(savedCart));
+      }
+    } catch (e) {
+      console.error("Failed to parse cart from localStorage", e);
+    }
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted) {
+      localStorage.setItem('manbu-cart', JSON.stringify(cart));
+    }
+  }, [cart, mounted]);
 
   const addToCart = (product: Omit<CartItem, 'quantity'>) => {
     setCart(prev => {

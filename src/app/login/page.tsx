@@ -12,6 +12,8 @@ export default function LoginPage() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -31,6 +33,11 @@ export default function LoginPage() {
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isRegistering && password !== confirmPassword) {
+      setError('兩次輸入的密碼不一致');
+      return;
+    }
+    
     try {
       setError('');
       setIsLoading(true);
@@ -84,15 +91,39 @@ export default function LoginPage() {
             </div>
             <div className={styles.field}>
               <label htmlFor="password" className={styles.label}>密碼</label>
-              <input 
-                id="password" 
-                type="password" 
-                className={styles.input} 
-                value={password} 
-                onChange={e => setPassword(e.target.value)} 
-                required 
-              />
+              <div className={styles.passwordWrapper}>
+                <input 
+                  id="password" 
+                  type={showPassword ? "text" : "password"} 
+                  className={styles.input} 
+                  value={password} 
+                  onChange={e => setPassword(e.target.value)} 
+                  required 
+                />
+                <button type="button" className={styles.showHideBtn} onClick={() => setShowPassword(!showPassword)}>
+                  {showPassword ? '隱藏' : '顯示'}
+                </button>
+              </div>
             </div>
+            
+            {isRegistering && (
+              <div className={styles.field}>
+                <label htmlFor="confirmPassword" className={styles.label}>確認密碼</label>
+                <div className={styles.passwordWrapper}>
+                  <input 
+                    id="confirmPassword" 
+                    type={showPassword ? "text" : "password"} 
+                    className={styles.input} 
+                    value={confirmPassword} 
+                    onChange={e => setConfirmPassword(e.target.value)} 
+                    required 
+                  />
+                  <button type="button" className={styles.showHideBtn} onClick={() => setShowPassword(!showPassword)}>
+                    {showPassword ? '隱藏' : '顯示'}
+                  </button>
+                </div>
+              </div>
+            )}
             
             <button type="submit" className={styles.submitBtn} disabled={isLoading}>
               {isLoading ? '處理中...' : (isRegistering ? '立即註冊' : '登入')}

@@ -1,3 +1,6 @@
+"use client";
+
+import Link from 'next/link';
 import styles from './Footer.module.css';
 
 export default function Footer() {
@@ -15,13 +18,14 @@ export default function Footer() {
         <div className={styles.navGroup}>
           <div className={styles.groupTitle}>探索</div>
           <ul className={styles.links}>
-            <li><a href="#">品牌故事</a></li>
-            <li><a href="#">配送政策</a></li>
-            <li><a href="#">聯絡我們</a></li>
-            <li><a href="#">隱私權服務</a></li>
+            <li><Link href="/about">品牌故事</Link></li>
+            <li><Link href="/shipping">配送政策</Link></li>
+            <li><a href="mailto:service@manbu-stew.com">聯絡我們</a></li>
+            <li><Link href="/privacy">隱私權服務</Link></li>
           </ul>
         </div>
 
+        {/* Temporarily hidden social icons
         <div className={styles.socialGroup}>
           <div className={styles.groupTitle}>關注我們</div>
           <div className={styles.socialIcons}>
@@ -30,6 +34,7 @@ export default function Footer() {
             <span className="material-symbols-outlined">mail</span>
           </div>
         </div>
+        */}
 
         <div className={styles.copyright}>
           <p>© 2024 漫步食光 Stroll & Eat. 把日常，煮成時光。</p>

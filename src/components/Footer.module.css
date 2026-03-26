@@ -79,6 +79,11 @@
 .copyright {
   color: rgba(47, 52, 48, 0.6);
   font-size: 0.75rem;
+  grid-column: 1 / -1;
+  text-align: center;
+  margin-top: 2rem;
+  border-top: 1px solid var(--outline-variant);
+  padding-top: 2rem;
 }
 
 .fab {
@@ -113,9 +118,43 @@
   .container {
     grid-template-columns: repeat(4, 1fr);
   }
-  .copyright {
-    text-align: right;
-  }
+}
+
+.newsletterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.newsletterInput {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-md);
+  margin-bottom: 0.5rem;
+  background-color: var(--surface);
+  color: var(--on-surface);
+}
+
+.newsletterInput:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.newsletterBtn {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: var(--primary);
+  color: var(--on-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.newsletterBtn:hover {
+  opacity: 0.9;
 }
 
 @media (max-width: 768px) {

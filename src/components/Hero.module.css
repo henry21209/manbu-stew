@@ -5,7 +5,8 @@
   align-items: center;
   padding: 0 4rem;
   overflow: hidden;
-  margin-top: 6rem; /* Adjust for fixed nav */
+  margin-top: 0;
+  padding-top: 0;
 }
 
 .bgWrapper {
