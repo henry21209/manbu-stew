@@ -46,6 +46,17 @@ export default function OrdersList() {
     fetchOrders();
   }, [currentUser]);
 
+  useEffect(() => {
+    // 雙重保險：監聽 BFCache (上一頁) 恢復事件，強制解除卡死的 Loading 狀態
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        setLoading(false);
+      }
+    };
+    window.addEventListener('pageshow', handlePageShow);
+    return () => window.removeEventListener('pageshow', handlePageShow);
+  }, []);
+
   if (!currentUser) return null;
 
 
@@ -54,6 +65,7 @@ export default function OrdersList() {
   if (orders.length === 0) return <p style={{textAlign: 'center', color: '#666', padding: '2rem'}}>目前沒有訂單紀錄</p>;
 
   const handlePayment = async (order: any) => {
+    setLoading(true);
     try {
       const response = await fetch('/api/ecpay/checkout', {
         method: 'POST',
@@ -70,12 +82,31 @@ export default function OrdersList() {
       }
 
       const html = await response.text();
-      document.open();
-      document.write(html);
-      document.close();
+      
+      // 建立隱藏的容器安置跳轉表單，徹底摒避 document.write 帶來的 DOM 毀滅效應
+      const tempDiv = document.createElement('div');
+      tempDiv.style.display = 'none';
+      tempDiv.innerHTML = html;
+      document.body.appendChild(tempDiv);
+      
+      const form = document.getElementById('ecpay-form') as HTMLFormElement;
+      if (form) {
+        form.submit();
+        
+        // Timeout 防禦：確保若是使用者在新頁面終止或按上一頁回來，React state 也能被還原
+        setTimeout(() => {
+          setLoading(false);
+          if (document.body.contains(tempDiv)) {
+            document.body.removeChild(tempDiv);
+          }
+        }, 1000);
+      } else {
+        throw new Error('無法載入綠界跳轉表單');
+      }
     } catch (err) {
       console.error("ECPay connection error:", err);
       alert('金流連線異常，請稍後再試');
+      setLoading(false);
     }
   };
 
