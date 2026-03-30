@@ -8,7 +8,17 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { collection, doc, runTransaction, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { z } from 'zod';
 import TopNav from '@/components/TopNav';
+
+// 企業級聯防：嚴格的表單驗證 Schema
+const checkoutSchema = z.object({
+  name: z.string().min(2, '請輸入完整的收件人姓名'),
+  phone: z.string().regex(/^09\d{8}$/, '請輸入有效的手機號碼 (例如: 0912345678)'),
+  email: z.string().email('請輸入有效的電子信箱'),
+  address: z.string().min(5, '請輸入完整的收件地址 (含縣市區)'),
+  payment: z.string()
+});
 import Footer from '@/components/Footer';
 
 export default function CheckoutPage() {
@@ -16,7 +26,8 @@ export default function CheckoutPage() {
   const { currentUser } = useAuth();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [buyerInfo, setBuyerInfo] = useState({ name: '', phone: '', address: '', payment: 'credit_card' });
+  const [buyerInfo, setBuyerInfo] = useState({ name: '', phone: '', email: '', address: '', payment: 'credit_card' });
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const fetchBuyerInfo = async () => {
@@ -29,8 +40,11 @@ export default function CheckoutPage() {
             ...prev,
             name: data.name || '',
             phone: data.phone || '',
+            email: data.email || currentUser.email || '',
             address: data.address || ''
           }));
+        } else {
+          setBuyerInfo(prev => ({ ...prev, email: currentUser.email || '' }));
         }
       } catch (err) {
         console.error("Error fetching user defaults:", err);
@@ -48,15 +62,28 @@ export default function CheckoutPage() {
       return;
     }
     
-    // 取出 FormData，必須在 await 之前同步執行，否則 e.currentTarget 會變成 null
+    // 取出 FormData 執行純淨 Zod 驗證
     const formData = new FormData(e.currentTarget);
     const buyerData = {
-      name: formData.get('name'),
-      phone: formData.get('phone'),
-      address: formData.get('address'),
-      payment: formData.get('payment'),
+      name: formData.get('name') as string || '',
+      phone: formData.get('phone') as string || '',
+      email: formData.get('email') as string || '',
+      address: formData.get('address') as string || '',
+      payment: formData.get('payment') as string || '',
     };
 
+    const result = checkoutSchema.safeParse(buyerData);
+    if (!result.success) {
+      // 提取第一個錯誤至 State Render
+      const formattedErrors: Record<string, string> = {};
+      for (const [key, val] of Object.entries(result.error.flatten().fieldErrors)) {
+        if (val && val.length > 0) formattedErrors[key] = val[0];
+      }
+      setErrors(formattedErrors);
+      return;
+    }
+
+    setErrors({});
     setIsSubmitting(true);
     
     try {
@@ -110,7 +137,7 @@ export default function CheckoutPage() {
         const orderMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
         const orderData = {
           userId: currentUser.uid,
-          userEmail: currentUser.email,
+          userEmail: buyerData.email,
           buyer: buyerData,
           items: snapshotItems,
           totalAmount: secureTotalPrice,
@@ -157,17 +184,26 @@ export default function CheckoutPage() {
                 <form id="checkout-form" className={styles.form} onSubmit={handleSubmit}>
                   <div className={styles.field}>
                     <label className={styles.label} htmlFor="name">收件人姓名</label>
-                    <input className={styles.input} type="text" id="name" name="name" required value={buyerInfo.name} onChange={e => setBuyerInfo({...buyerInfo, name: e.target.value})} placeholder="王大明" />
+                    <input className={styles.input} type="text" id="name" name="name" value={buyerInfo.name} onChange={e => setBuyerInfo({...buyerInfo, name: e.target.value})} placeholder="王大明" />
+                    {errors.name && <p className="text-red-500 text-sm mt-1" style={{ color: '#ef4444', fontSize: '0.875rem', marginTop: '0.25rem' }}>{errors.name}</p>}
                   </div>
                   
                   <div className={styles.field}>
                     <label className={styles.label} htmlFor="phone">聯絡電話</label>
-                    <input className={styles.input} type="tel" id="phone" name="phone" required value={buyerInfo.phone} onChange={e => setBuyerInfo({...buyerInfo, phone: e.target.value})} placeholder="0912-345-678" />
+                    <input className={styles.input} type="tel" id="phone" name="phone" value={buyerInfo.phone} onChange={e => setBuyerInfo({...buyerInfo, phone: e.target.value})} placeholder="0912-345-678" />
+                    {errors.phone && <p className="text-red-500 text-sm mt-1" style={{ color: '#ef4444', fontSize: '0.875rem', marginTop: '0.25rem' }}>{errors.phone}</p>}
+                  </div>
+
+                  <div className={styles.field}>
+                    <label className={styles.label} htmlFor="email">聯絡信箱</label>
+                    <input className={styles.input} type="email" id="email" name="email" value={buyerInfo.email} onChange={e => setBuyerInfo({...buyerInfo, email: e.target.value})} placeholder="example@manbu.com" />
+                    {errors.email && <p className="text-red-500 text-sm mt-1" style={{ color: '#ef4444', fontSize: '0.875rem', marginTop: '0.25rem' }}>{errors.email}</p>}
                   </div>
                   
                   <div className={styles.field}>
                     <label className={styles.label} htmlFor="address">配送地址</label>
-                    <input className={styles.input} type="text" id="address" name="address" required value={buyerInfo.address} onChange={e => setBuyerInfo({...buyerInfo, address: e.target.value})} placeholder="台北市信義區..." />
+                    <input className={styles.input} type="text" id="address" name="address" value={buyerInfo.address} onChange={e => setBuyerInfo({...buyerInfo, address: e.target.value})} placeholder="台北市信義區..." />
+                    {errors.address && <p className="text-red-500 text-sm mt-1" style={{ color: '#ef4444', fontSize: '0.875rem', marginTop: '0.25rem' }}>{errors.address}</p>}
                   </div>
                   
                   <div className={styles.field}>
