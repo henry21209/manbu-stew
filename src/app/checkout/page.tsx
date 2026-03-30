@@ -127,33 +127,8 @@ export default function CheckoutPage() {
       
       clearCart();
 
-      // Launch ECPay Handshake
-      try {
-        const response = await fetch('/api/ecpay/checkout', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            orderId: createdOrder.orderId,
-            totalAmount: createdOrder.totalAmount,
-            itemName: '漫步食光線上購物'
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error('API Responded with ' + response.status);
-        }
-
-        const html = await response.text();
-        
-        // Execute Document Override natively hijacking the DOM logic
-        document.open();
-        document.write(html);
-        document.close();
-      } catch (err) {
-        console.error("ECPay connection error:", err);
-        alert('金流連線異常，請稍後再試');
-        router.push('/orders');
-      }
+      alert('訂單建立成功！請於會員中心完成後續結帳作業。');
+      router.push('/orders');
     } catch (error: any) {
       console.error("Order submission error: ", error);
       alert(`訂單建立失敗：${error.message || '請稍後再試'}`);
