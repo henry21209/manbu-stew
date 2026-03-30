@@ -60,7 +60,7 @@ export default function CheckoutPage() {
     setIsSubmitting(true);
     
     try {
-      await runTransaction(db, async (transaction) => {
+      const createdOrder = await runTransaction(db, async (transaction) => {
         let secureTotalPrice = 0;
         const snapshotItems: any[] = [];
         
@@ -121,11 +121,39 @@ export default function CheckoutPage() {
 
         const newOrderRef = doc(collection(db, 'orders'));
         transaction.set(newOrderRef, orderData);
+        
+        return { orderId: newOrderRef.id, totalAmount: secureTotalPrice };
       });
       
-      alert('訂單建立成功！');
       clearCart();
-      router.push('/');
+
+      // Launch ECPay Handshake
+      try {
+        const response = await fetch('/api/ecpay/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId: createdOrder.orderId,
+            totalAmount: createdOrder.totalAmount,
+            itemName: '漫步食光線上購物'
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('API Responded with ' + response.status);
+        }
+
+        const html = await response.text();
+        
+        // Execute Document Override natively hijacking the DOM logic
+        document.open();
+        document.write(html);
+        document.close();
+      } catch (err) {
+        console.error("ECPay connection error:", err);
+        alert('金流連線異常，請稍後再試');
+        router.push('/orders');
+      }
     } catch (error: any) {
       console.error("Order submission error: ", error);
       alert(`訂單建立失敗：${error.message || '請稍後再試'}`);
