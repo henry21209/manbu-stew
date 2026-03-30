@@ -1,7 +1,17 @@
 import { NextRequest } from 'next/server';
 import crypto from 'crypto';
-import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import * as admin from 'firebase-admin';
+
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    })
+  });
+}
+const db = admin.firestore();
 
 export async function POST(req: NextRequest) {
   try {
@@ -46,12 +56,12 @@ export async function POST(req: NextRequest) {
       return new Response('0|ErrorMessage', { status: 400 });
     }
 
-    // 3. 驗證成功，準備透過 Admin 或原 Client 架構覆寫 Firestore 狀態
-    const orderRef = doc(db, 'orders', ecpayParams.MerchantTradeNo);
+    // 3. 驗證成功，透過 Admin SDK 無條件繞過 Security Rules 覆寫 Firestore 狀態
+    const orderRef = db.collection('orders').doc(ecpayParams.MerchantTradeNo);
     
     if (ecpayParams.RtnCode === '1') {
       // 成功完成付款
-      await updateDoc(orderRef, {
+      await orderRef.update({
         status: 'paid',
         tradeNo: ecpayParams.TradeNo,
         paymentDate: ecpayParams.PaymentDate || new Date().toISOString()
@@ -59,7 +69,7 @@ export async function POST(req: NextRequest) {
     } else {
       // 付款失敗、逾期、或其他異常錯誤
       // 將資料庫紀錄為 failed (付款失敗)，方便日後系統或財務查帳抓漏
-      await updateDoc(orderRef, {
+      await orderRef.update({
         status: 'failed',
         rtnMsg: ecpayParams.RtnMsg || '交易失敗'
       });
