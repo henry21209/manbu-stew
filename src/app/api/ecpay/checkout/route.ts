@@ -14,7 +14,8 @@ export async function POST(req: NextRequest) {
 
     const params: Record<string, string | number> = {
       MerchantID,
-      MerchantTradeNo: orderId || `MB${Date.now()}`,
+      MerchantTradeNo: 'TS' + Date.now().toString() + Math.floor(Math.random() * 100).toString().padStart(2, '0'),
+      CustomField1: orderId || '',
       MerchantTradeDate: dayjs().format('YYYY/MM/DD HH:mm:ss'),
       PaymentType: 'aio',
       TotalAmount: totalAmount || 0,

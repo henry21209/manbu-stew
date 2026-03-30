@@ -56,8 +56,15 @@ export async function POST(req: NextRequest) {
       return new Response('0|ErrorMessage', { status: 400 });
     }
 
-    // 3. 驗證成功，透過 Admin SDK 無條件繞過 Security Rules 覆寫 Firestore 狀態
-    const orderRef = db.collection('orders').doc(ecpayParams.MerchantTradeNo);
+    // 3. 驗證成功，透過 CustomField1 尋回丟棄的 Firestore 原始單號
+    const actualOrderId = ecpayParams.CustomField1;
+    if (!actualOrderId) {
+      console.error('ECPay Callback Error: Missing CustomField1 (orderId)');
+      return new Response('0|ErrorMessage', { status: 400 });
+    }
+    
+    // 透過 Admin SDK 無條件繞過 Security Rules 覆寫 Firestore 狀態
+    const orderRef = db.collection('orders').doc(actualOrderId);
     
     if (ecpayParams.RtnCode === '1') {
       // 成功完成付款
