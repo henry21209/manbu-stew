@@ -47,6 +47,13 @@ type Category = {
 };
 import styles from "./Admin.module.css";
 
+const statusConfig: Record<string, { label: string, color: string, badgeBg: string, badgeText: string }> = {
+  pending: { label: '待處理', color: 'bg-yellow-100 text-yellow-800', badgeBg: '#FEF3C7', badgeText: '#92400E' },
+  paid: { label: '已付款', color: 'bg-green-100 text-green-800', badgeBg: '#D1FAE5', badgeText: '#065F46' },
+  shipped: { label: '已出貨', color: 'bg-blue-100 text-blue-800', badgeBg: '#DBEAFE', badgeText: '#1E40AF' },
+  cancelled: { label: '已取消', color: 'bg-gray-100 text-gray-800', badgeBg: '#F3F4F6', badgeText: '#1F2937' },
+};
+
 export default function AdminPage() {
   const [user, setUser] = useState<User | null>(null);
   const [email, setEmail] = useState("");
@@ -675,54 +682,52 @@ export default function AdminPage() {
                                 </td>
                                 <td className={styles.totalPrice}>NT$ {order.totalAmount?.toLocaleString()}</td>
                                 <td>
-                                  <span className={`${styles.statusBadge} ${order.status === 'shipped' ? styles.statusShipped : order.status === 'cancelled' ? styles.statusCancelled : styles.statusPending}`}>
-                                    {order.status === 'shipped' ? '已出貨' : order.status === 'cancelled' ? '已取消' : '處理中'}
+                                  <span 
+                                    className={statusConfig[order.status]?.color || ''} 
+                                    style={{
+                                      padding: '0.35rem 0.8rem', 
+                                      borderRadius: '9999px', 
+                                      fontSize: '0.85rem', 
+                                      fontWeight: '600',
+                                      backgroundColor: statusConfig[order.status]?.badgeBg || '#f3f4f6', 
+                                      color: statusConfig[order.status]?.badgeText || '#374151',
+                                      display: 'inline-block'
+                                    }}
+                                  >
+                                    {statusConfig[order.status]?.label || order.status}
                                   </span>
                                 </td>
                                 <td>
-                                  {order.status === 'pending' || !order.status ? (
-                                    <div className={styles.actionButtons}>
+                                  <div className={styles.actionButtons}>
+                                    {order.status === 'paid' && (
                                       <button 
-                                        className={styles.shipBtn}
+                                        style={{
+                                          background: '#4a3b32',
+                                          color: '#fff',
+                                          border: 'none',
+                                          padding: '0.4rem 1rem',
+                                          borderRadius: '4px',
+                                          cursor: updatingOrderId === order.id ? 'not-allowed' : 'pointer',
+                                          fontSize: '0.9rem',
+                                          opacity: updatingOrderId === order.id ? 0.7 : 1
+                                        }}
                                         disabled={updatingOrderId === order.id}
                                         onClick={() => handleUpdateStatus(order.id, 'shipped')}
                                       >
-                                        {updatingOrderId === order.id ? '處理中...' : '出貨'}
+                                        {updatingOrderId === order.id ? '更新中...' : '標記為已出貨'}
                                       </button>
+                                    )}
+                                    
+                                    {isSuperAdmin && (
                                       <button 
-                                        className={styles.toggleBtn}
+                                        className={styles.deleteDangerBtn}
                                         disabled={updatingOrderId === order.id}
-                                        onClick={() => handleUpdateStatus(order.id, 'cancelled')}
+                                        onClick={() => handleDeleteOrder(order.id)}
                                       >
-                                        取消訂單
+                                        永久刪除
                                       </button>
-                                      {/* 權限分層：只有主帳戶能看到實體刪除按鈕 */}
-                                      {isSuperAdmin && (
-                                        <button 
-                                          className={styles.deleteDangerBtn}
-                                          disabled={updatingOrderId === order.id}
-                                          onClick={() => handleDeleteOrder(order.id)}
-                                        >
-                                          永久刪除訂單
-                                        </button>
-                                      )}
-                                    </div>
-                                  ) : (
-                                    <div className={styles.actionButtons}>
-                                      <span className={styles.doneText}>
-                                        {order.status === 'cancelled' ? '已終止' : '已完成'}
-                                      </span>
-                                      {isSuperAdmin && (
-                                        <button 
-                                          className={styles.deleteDangerBtn}
-                                          disabled={updatingOrderId === order.id}
-                                          onClick={() => handleDeleteOrder(order.id)}
-                                        >
-                                          永久刪除訂單
-                                        </button>
-                                      )}
-                                    </div>
-                                  )}
+                                    )}
+                                  </div>
                                 </td>
                               </tr>
                               <tr className={styles.itemsRow}>

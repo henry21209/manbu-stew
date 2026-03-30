@@ -6,6 +6,13 @@ import { collection, query, where, orderBy, getDocs, doc, runTransaction } from 
 import { db } from '@/lib/firebase';
 import styles from '@/app/orders/Orders.module.css';
 
+const statusConfig: Record<string, { label: string, color: string, badgeBg: string, badgeText: string }> = {
+  pending: { label: '待處理', color: 'bg-yellow-100 text-yellow-800', badgeBg: '#FEF3C7', badgeText: '#92400E' },
+  paid: { label: '已付款', color: 'bg-green-100 text-green-800', badgeBg: '#D1FAE5', badgeText: '#065F46' },
+  shipped: { label: '已出貨', color: 'bg-blue-100 text-blue-800', badgeBg: '#DBEAFE', badgeText: '#1E40AF' },
+  cancelled: { label: '已取消', color: 'bg-gray-100 text-gray-800', badgeBg: '#F3F4F6', badgeText: '#1F2937' },
+};
+
 export default function OrdersList() {
   const { currentUser } = useAuth();
   const [orders, setOrders] = useState<any[]>([]);
@@ -41,15 +48,7 @@ export default function OrdersList() {
 
   if (!currentUser) return null;
 
-  const translateStatus = (status: string) => {
-    switch (status) {
-      case 'pending': return '待處理';
-      case 'shipped': return '已出貨';
-      case 'completed': return '已完成';
-      case 'cancelled': return '已取消';
-      default: return status || '未知';
-    }
-  };
+
 
   if (loading) return <p style={{textAlign: 'center', color: '#666', padding: '2rem'}}>載入中...</p>;
   if (orders.length === 0) return <p style={{textAlign: 'center', color: '#666', padding: '2rem'}}>目前沒有訂單紀錄</p>;
@@ -127,8 +126,19 @@ export default function OrdersList() {
         <div key={order.id} className={styles.orderCard}>
           <div className={styles.orderHeader}>
             <span className={styles.orderId}>訂單編號: {order.id}</span>
-            <span className={styles.orderStatus} data-status={order.status}>
-              {translateStatus(order.status)}
+            <span 
+              className={statusConfig[order.status]?.color || ''} 
+              style={{
+                padding: '0.25rem 0.75rem', 
+                borderRadius: '9999px', 
+                fontSize: '0.875rem', 
+                fontWeight: '600',
+                backgroundColor: statusConfig[order.status]?.badgeBg || '#f3f4f6', 
+                color: statusConfig[order.status]?.badgeText || '#374151',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+              }}
+            >
+              {statusConfig[order.status]?.label || order.status}
             </span>
           </div>
           
