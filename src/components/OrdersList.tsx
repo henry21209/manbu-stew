@@ -115,30 +115,31 @@ export default function OrdersList() {
     
     setLoading(true);
     try {
-      await runTransaction(db, async (transaction) => {
-        const orderRef = doc(db, 'orders', order.id);
-        const orderSnap = await transaction.get(orderRef);
-        
-        if (!orderSnap.exists()) throw new Error('發生異常：訂單資料庫查無此筆紀錄');
-        if (orderSnap.data().status !== 'pending') throw new Error('該訂單目前狀態已經無法取消');
-
-        // Safely execute positive stock restoration iteratively mapping to current products
-        if (order.items && order.items.length > 0) {
-          const productRefs = order.items.map((item: any) => doc(db, 'products', item.id));
-          const productSnaps = await Promise.all(productRefs.map((ref: any) => transaction.get(ref)));
-          
-          order.items.forEach((item: any, index: number) => {
-            const productSnap = productSnaps[index];
-            if (productSnap.exists()) {
-              const currentStock = productSnap.data().stock || 0;
-              transaction.update(productRefs[index], { stock: currentStock + item.quantity });
-            }
-          });
+      if (!currentUser) throw new Error('憑證遺失，請重新登入');
+      
+      const idToken = await currentUser.getIdToken();
+      
+      const response = await fetch(`/api/orders/${order.id}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${idToken}`,
+          'Content-Type': 'application/json'
         }
-
-        // Finalize transaction explicitly enforcing cancellation parameter
-        transaction.update(orderRef, { status: 'cancelled' });
       });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorMessage = '無法取消訂單';
+        try {
+          const errObj = JSON.parse(errorText);
+          errorMessage = errObj.error || errorMessage;
+        } catch {
+          console.error("Raw API Error:", errorText);
+        }
+        throw new Error(errorMessage);
+      }
+
+      await response.json(); // Consume safely
 
       // Synchronously update local react hook overriding remote fetch needs
       setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: 'cancelled' } : o));

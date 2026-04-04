@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { collection, query, orderBy, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, doc, updateDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import styles from './AdminOrders.module.css';
 
@@ -21,9 +21,9 @@ export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
-    // 拉取全站 Firebase Orders 資料，與使用者 ID 完全脫鉤
     const fetchOrders = async () => {
       try {
         const q = query(
@@ -43,13 +43,29 @@ export default function AdminOrdersPage() {
       }
     };
     
-    // AuthContext 會經歷 undefined (載入中) -> null (未登入) -> User (已登入)
     if (currentUser !== undefined) {
       if (currentUser === null) {
-        // 未登入管理員直接踢回首頁
-        router.push('/');
+        router.replace('/');
       } else {
-        fetchOrders();
+        // RBI (Role-Based Identity) Guard
+        const checkRoleAndLoad = async () => {
+          try {
+            if (!currentUser.email) throw new Error('Missing Email');
+            
+            const roleDoc = await getDoc(doc(db, 'admin_roles', currentUser.email));
+            if (!roleDoc.exists()) throw new Error('Unauthorized');
+            
+            const role = roleDoc.data().role;
+            if (role !== 'admin' && role !== 'super_admin') throw new Error('Forbidden');
+            
+            setUserRole(role);
+            fetchOrders();
+          } catch (e) {
+            console.error("RBAC 攔截:", e);
+            router.replace('/');
+          }
+        };
+        checkRoleAndLoad();
       }
     }
   }, [currentUser, router]);
@@ -69,6 +85,39 @@ export default function AdminOrdersPage() {
     } catch (error) {
       console.error("Error updating order status:", error);
       alert('更新狀態失敗，可能權限不足或連線異常。');
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  // 物理刪除指令
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!window.confirm('警告：您即將把此訂單從資料庫中永遠抹除。此操作無法還原，確定執行？')) return;
+    
+    setUpdatingId(orderId);
+    try {
+      const idToken = await currentUser!.getIdToken();
+      
+      const response = await fetch(`/api/admin/orders/${orderId}/delete`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${idToken}`
+        }
+      });
+      
+      if (!response.ok) {
+        const text = await response.text();
+        let errMsg = '刪除失敗';
+        try { errMsg = JSON.parse(text).error; } catch {}
+        throw new Error(errMsg);
+      }
+      
+      // 從 UI 徹底移除
+      setOrders(prev => prev.filter(o => o.id !== orderId));
+      alert('該筆訂單檔案已經被實體粉碎。');
+    } catch (error: any) {
+      console.error('Delete error:', error);
+      alert(error.message);
     } finally {
       setUpdatingId(null);
     }
@@ -159,29 +208,54 @@ export default function AdminOrdersPage() {
                       </span>
                     </td>
                     <td className={styles.td}>
-                      {order.status === 'paid' ? (
-                        <button
-                          onClick={() => handleShipOrder(order.id)}
-                          disabled={updatingId === order.id}
-                          style={{
-                            background: '#4a3b32', // 品牌色
-                            color: '#fff',
-                            border: 'none',
-                            padding: '0.5rem 1.2rem',
-                            borderRadius: '4px',
-                            cursor: updatingId === order.id ? 'not-allowed' : 'pointer',
-                            fontSize: '0.9rem',
-                            fontWeight: 600,
-                            opacity: updatingId === order.id ? 0.7 : 1,
-                            transition: 'all 0.2s',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                          }}
-                        >
-                          {updatingId === order.id ? '狀態更新中...' : '標記為已出貨'}
-                        </button>
-                      ) : (
-                        <span style={{ color: '#94a3b8', fontSize: '0.9rem', padding: '0.5rem 1.2rem' }}>—</span>
-                      )}
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        {order.status === 'paid' && (
+                          <button
+                            onClick={() => handleShipOrder(order.id)}
+                            disabled={updatingId === order.id}
+                            style={{
+                              background: '#4a3b32',
+                              color: '#fff',
+                              border: 'none',
+                              padding: '0.5rem 1.2rem',
+                              borderRadius: '4px',
+                              cursor: updatingId === order.id ? 'not-allowed' : 'pointer',
+                              fontSize: '0.9rem',
+                              fontWeight: 600,
+                              opacity: updatingId === order.id ? 0.7 : 1,
+                              transition: 'all 0.2s',
+                              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                            }}
+                          >
+                            {updatingId === order.id ? '作業中...' : '標記為已出貨'}
+                          </button>
+                        )}
+
+                        {userRole === 'super_admin' && (order.status === 'cancelled' || order.status === 'failed') && (
+                          <button
+                            onClick={() => handleDeleteOrder(order.id)}
+                            disabled={updatingId === order.id}
+                            style={{
+                              background: '#fee2e2',
+                              color: '#b91c1c',
+                              border: '1px solid #ef4444',
+                              padding: '0.45rem 1rem',
+                              borderRadius: '4px',
+                              cursor: updatingId === order.id ? 'not-allowed' : 'pointer',
+                              fontSize: '0.85rem',
+                              fontWeight: 600,
+                              opacity: updatingId === order.id ? 0.5 : 1,
+                              transition: 'all 0.2s'
+                            }}
+                          >
+                            實體粉碎
+                          </button>
+                        )}
+
+                        {order.status !== 'paid' && !(userRole === 'super_admin' && (order.status === 'cancelled' || order.status === 'failed')) && (
+                          <span style={{ color: '#94a3b8', fontSize: '0.9rem', padding: '0.5rem 0' }}>—</span>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );

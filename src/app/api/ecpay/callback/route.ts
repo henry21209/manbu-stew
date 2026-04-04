@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import crypto from 'crypto';
 import * as admin from 'firebase-admin';
+import resend from '@/lib/resend';
 
 if (!admin.apps.length) {
   admin.initializeApp({
@@ -73,6 +74,49 @@ export async function POST(req: NextRequest) {
         tradeNo: ecpayParams.TradeNo,
         paymentDate: ecpayParams.PaymentDate || new Date().toISOString()
       });
+      
+      // 自動 Email 發送邏輯 (以 try-catch 包覆獨立錯誤，絕對不中斷綠界的 1|OK 確認循環)
+      try {
+        const orderSnap = await orderRef.get();
+        if (orderSnap.exists) {
+          const orderData = orderSnap.data();
+          if (orderData?.userEmail) {
+            
+            // 將明細轉換為 HTML 格式
+            const itemsList = orderData.items?.map((item: any) => 
+               `<li>${item.name} x ${item.quantity} (NT$ ${item.price.toLocaleString()})</li>`
+            ).join('') || '<li>（商品明細未定）</li>';
+
+            await resend.emails.send({
+              from: '漫步食光 <onboarding@resend.dev>',
+              to: orderData.userEmail,
+              subject: `漫步食光 - 您的訂單已付款成功！(訂單編號: ${actualOrderId})`,
+              html: `
+                <div style="font-family: sans-serif; color: #4a3b32; line-height: 1.6;">
+                  <h2 style="color: #6d8c54;">💯 感謝您的購買！</h2>
+                  <p>您好，我們已成功收到您透過「綠界科技 ECPay」支付的款項。</p>
+                  <p><strong>訂單編號：</strong> ${actualOrderId}</p>
+                  <p><strong>刷卡/總金額：</strong> NT$ ${orderData.totalAmount?.toLocaleString() || ecpayParams.TradeAmt}</p>
+                  
+                  <div style="background-color: #FAFAFA; border-radius: 8px; padding: 16px; margin: 20px 0;">
+                    <h3 style="margin-top: 0; border-bottom: 1px solid #CCC; padding-bottom: 8px;">🛒 購買明細：</h3>
+                    <ul style="padding-left: 20px;">
+                      ${itemsList}
+                    </ul>
+                  </div>
+                  
+                  <p>我們將盡快為您安排出貨，如需隨時查看進度請登入官方網站「我的訂單」頁面。</p>
+                  <p>祝您有美好的一天！</p>
+                </div>
+              `
+            });
+            console.log(`Success email sent to ${orderData.userEmail}`);
+          }
+        }
+      } catch (emailError) {
+        console.error('Failed to send success email via Resend:', emailError);
+      }
+      
     } else {
       // 付款失敗、逾期、或其他異常錯誤
       // 將資料庫紀錄為 failed (付款失敗)，方便日後系統或財務查帳抓漏

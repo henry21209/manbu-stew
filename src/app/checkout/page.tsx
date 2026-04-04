@@ -9,15 +9,31 @@ import { useRouter } from 'next/navigation';
 import { collection, doc, runTransaction, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { z } from 'zod';
+import { TAIWAN_DISTRICTS } from '@/lib/taiwan-data';
 import TopNav from '@/components/TopNav';
 
-// 企業級聯防：嚴格的表單驗證 Schema
+// 企業級聯防：嚴格的表單驗證 Schema，包含 Transform 寬容轉換與連動校驗邏輯
 const checkoutSchema = z.object({
   name: z.string().min(2, '請輸入完整的收件人姓名'),
-  phone: z.string().regex(/^09\d{8}$/, '請輸入有效的手機號碼 (例如: 0912345678)'),
+  phone: z.string()
+          .transform(val => val.replace(/[-_ ]/g, ''))
+          .pipe(z.string().regex(/^09\d{8}$/, '請輸入有效的手機號碼 (例如: 0912345678)')),
   email: z.string().email('請輸入有效的電子信箱'),
-  address: z.string().min(5, '請輸入完整的收件地址 (含縣市區)'),
+  city: z.string().refine(val => Object.keys(TAIWAN_DISTRICTS).includes(val), { message: '無效的縣市選項' }),
+  district: z.string().min(1, '請選擇行政區'),
+  detailAddress: z.string().min(5, '請輸入完整的收件街道門牌 (不含縣市區)'),
   payment: z.string()
+}).superRefine((data, ctx) => {
+  if (data.city) {
+    const validDistricts = TAIWAN_DISTRICTS[data.city];
+    if (!validDistricts || !validDistricts.includes(data.district)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['district'],
+        message: '您選擇的行政區不存在於該縣市中，請勿竄改資料'
+      });
+    }
+  }
 });
 import Footer from '@/components/Footer';
 
@@ -26,7 +42,7 @@ export default function CheckoutPage() {
   const { currentUser } = useAuth();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [buyerInfo, setBuyerInfo] = useState({ name: '', phone: '', email: '', address: '', payment: 'credit_card' });
+  const [buyerInfo, setBuyerInfo] = useState({ name: '', phone: '', email: '', city: '', district: '', detailAddress: '', payment: 'credit_card' });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -41,7 +57,9 @@ export default function CheckoutPage() {
             name: data.name || '',
             phone: data.phone || '',
             email: data.email || currentUser.email || '',
-            address: data.address || ''
+            city: data.city || '',
+            district: data.district || '',
+            detailAddress: data.detailAddress || data.address || '' // 若舊版單一字串地址，則暫存於門牌號碼
           }));
         } else {
           setBuyerInfo(prev => ({ ...prev, email: currentUser.email || '' }));
@@ -64,15 +82,17 @@ export default function CheckoutPage() {
     
     // 取出 FormData 執行純淨 Zod 驗證
     const formData = new FormData(e.currentTarget);
-    const buyerData = {
+    const buyerDataRaw = {
       name: formData.get('name') as string || '',
       phone: formData.get('phone') as string || '',
       email: formData.get('email') as string || '',
-      address: formData.get('address') as string || '',
+      city: formData.get('city') as string || '',
+      district: formData.get('district') as string || '',
+      detailAddress: formData.get('detailAddress') as string || '',
       payment: formData.get('payment') as string || '',
     };
 
-    const result = checkoutSchema.safeParse(buyerData);
+    const result = checkoutSchema.safeParse(buyerDataRaw);
     if (!result.success) {
       // 提取第一個錯誤至 State Render
       const formattedErrors: Record<string, string> = {};
@@ -85,6 +105,16 @@ export default function CheckoutPage() {
 
     setErrors({});
     setIsSubmitting(true);
+    
+    // 將驗證通過之無塵資料準備好 (包含清除符號後的手機和組合後的地址)
+    const validData = result.data;
+    const finalBuyerData = {
+      name: validData.name,
+      phone: validData.phone,
+      email: validData.email,
+      address: `${validData.city}${validData.district}${validData.detailAddress}`,
+      payment: validData.payment
+    };
     
     try {
       const createdOrder = await runTransaction(db, async (transaction) => {
@@ -137,8 +167,8 @@ export default function CheckoutPage() {
         const orderMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
         const orderData = {
           userId: currentUser.uid,
-          userEmail: buyerData.email,
-          buyer: buyerData,
+          userEmail: finalBuyerData.email,
+          buyer: finalBuyerData,
           items: snapshotItems,
           totalAmount: secureTotalPrice,
           orderMonth: orderMonth,
@@ -201,9 +231,43 @@ export default function CheckoutPage() {
                   </div>
                   
                   <div className={styles.field}>
-                    <label className={styles.label} htmlFor="address">配送地址</label>
-                    <input className={styles.input} type="text" id="address" name="address" value={buyerInfo.address} onChange={e => setBuyerInfo({...buyerInfo, address: e.target.value})} placeholder="台北市信義區..." />
-                    {errors.address && <p className="text-red-500 text-sm mt-1" style={{ color: '#ef4444', fontSize: '0.875rem', marginTop: '0.25rem' }}>{errors.address}</p>}
+                    <label className={styles.label}>配送地址</label>
+                    <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                      <select 
+                        className={styles.select} 
+                        name="city" 
+                        value={buyerInfo.city} 
+                        onChange={e => setBuyerInfo({...buyerInfo, city: e.target.value, district: ''})}
+                        style={{ flex: 1 }}
+                      >
+                        <option value="">選擇縣市</option>
+                        {Object.keys(TAIWAN_DISTRICTS).map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                      
+                      <select 
+                        className={styles.select} 
+                        name="district" 
+                        value={buyerInfo.district} 
+                        onChange={e => setBuyerInfo({...buyerInfo, district: e.target.value})}
+                        style={{ flex: 1 }}
+                        disabled={!buyerInfo.city}
+                      >
+                        <option value="">選擇區域</option>
+                        {buyerInfo.city && TAIWAN_DISTRICTS[buyerInfo.city]?.map((d: string) => <option key={d} value={d}>{d}</option>)}
+                      </select>
+                    </div>
+                    {(errors.city || errors.district) && <p className="text-red-500 text-sm mt-1" style={{ color: '#ef4444', fontSize: '0.875rem', marginTop: '0.25rem' }}>{errors.city || errors.district}</p>}
+                    
+                    <input 
+                      className={styles.input} 
+                      type="text" 
+                      id="detailAddress" 
+                      name="detailAddress" 
+                      value={buyerInfo.detailAddress} 
+                      onChange={e => setBuyerInfo({...buyerInfo, detailAddress: e.target.value})} 
+                      placeholder="復興南路一段 100 號 5 樓..." 
+                    />
+                    {errors.detailAddress && <p className="text-red-500 text-sm mt-1" style={{ color: '#ef4444', fontSize: '0.875rem', marginTop: '0.25rem' }}>{errors.detailAddress}</p>}
                   </div>
                   
                   <div className={styles.field}>

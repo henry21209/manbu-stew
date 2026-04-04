@@ -6,15 +6,41 @@ import { useRouter } from 'next/navigation';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { updatePassword } from 'firebase/auth';
 import { db } from '@/lib/firebase';
+import { z } from 'zod';
+import { TAIWAN_DISTRICTS } from '@/lib/taiwan-data';
 import styles from './Profile.module.css';
 import TopNav from '@/components/TopNav';
 import Footer from '@/components/Footer';
 import OrdersList from '@/components/OrdersList';
 
+// 企業級聯防：嚴格的表單驗證 Schema，包含 Transform 寬容轉換與連動校驗邏輯
+const profileSchema = z.object({
+  name: z.string().min(2, '請輸入完整的真實姓名'),
+  phone: z.string()
+          .transform(val => val.replace(/[-_ ]/g, ''))
+          .pipe(z.string().regex(/^09\d{8}$/, '請輸入有效的手機號碼 (例如: 0912345678)')),
+  city: z.string().refine(val => Object.keys(TAIWAN_DISTRICTS).includes(val), { message: '無效的縣市選項' }),
+  district: z.string().min(1, '請選擇行政區'),
+  detailAddress: z.string().min(5, '請輸入完整的聯絡街道門牌 (不含縣市區)'),
+}).superRefine((data, ctx) => {
+  if (data.city) {
+    const validDistricts = TAIWAN_DISTRICTS[data.city];
+    if (!validDistricts || !validDistricts.includes(data.district)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['district'],
+        message: '您選擇的行政區不存在於該縣市中，請勿竄改資料'
+      });
+    }
+  }
+});
+
 interface UserProfile {
   name: string;
   phone: string;
-  address: string;
+  city: string;
+  district: string;
+  detailAddress: string;
 }
 
 export default function ProfilePage() {
@@ -27,8 +53,11 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile>({
     name: '',
     phone: '',
-    address: ''
+    city: '',
+    district: '',
+    detailAddress: ''
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [isFetching, setIsFetching] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -56,7 +85,9 @@ export default function ProfilePage() {
           setProfile({
             name: data.name || '',
             phone: data.phone || '',
-            address: data.address || ''
+            city: data.city || '',
+            district: data.district || '',
+            detailAddress: data.detailAddress || data.address || '' // 容忍對接到舊欄位
           });
         }
       } catch (error) {
@@ -73,15 +104,31 @@ export default function ProfilePage() {
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser) return;
-
+    // Zod Validation 進行資料淨化檢核
+    const result = profileSchema.safeParse(profile);
+    if (!result.success) {
+      const formattedErrors: Record<string, string> = {};
+      for (const [key, val] of Object.entries(result.error.flatten().fieldErrors)) {
+        if (val && val.length > 0) formattedErrors[key] = val[0];
+      }
+      setErrors(formattedErrors);
+      return;
+    }
+    
+    setErrors({});
     setIsSaving(true);
     setMessage('');
+    
     try {
       const userRef = doc(db, 'users', currentUser.uid);
+      const validData = result.data;
+      
       await setDoc(userRef, {
-        name: profile.name,
-        phone: profile.phone,
-        address: profile.address,
+        name: validData.name,
+        phone: validData.phone,
+        city: validData.city,
+        district: validData.district,
+        detailAddress: validData.detailAddress,
         updatedAt: new Date()
       }, { merge: true });
       
@@ -206,6 +253,7 @@ export default function ProfilePage() {
                       onChange={e => setProfile({...profile, name: e.target.value})} 
                       placeholder="請輸入您的真實姓名"
                     />
+                    {errors.name && <p className="text-red-500 text-sm mt-1" style={{ color: '#ef4444', fontSize: '0.875rem', marginTop: '0.25rem' }}>{errors.name}</p>}
                   </div>
                   
                   <div className={styles.field}>
@@ -218,18 +266,46 @@ export default function ProfilePage() {
                       onChange={e => setProfile({...profile, phone: e.target.value})} 
                       placeholder="例如: 0912345678"
                     />
+                    {errors.phone && <p className="text-red-500 text-sm mt-1" style={{ color: '#ef4444', fontSize: '0.875rem', marginTop: '0.25rem' }}>{errors.phone}</p>}
                   </div>
                   
                   <div className={styles.field}>
-                    <label htmlFor="address" className={styles.label}>預設收件地址</label>
+                    <label className={styles.label}>預設收件地址</label>
+                    <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                      <select 
+                        className={styles.select || styles.input} 
+                        name="city" 
+                        value={profile.city} 
+                        onChange={e => setProfile({...profile, city: e.target.value, district: ''})}
+                        style={{ flex: 1, padding: '0.75rem', border: '1px solid #ccc', borderRadius: '4px' }}
+                      >
+                        <option value="">選擇縣市</option>
+                        {Object.keys(TAIWAN_DISTRICTS).map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                      
+                      <select 
+                        className={styles.select || styles.input} 
+                        name="district" 
+                        value={profile.district} 
+                        onChange={e => setProfile({...profile, district: e.target.value})}
+                        style={{ flex: 1, padding: '0.75rem', border: '1px solid #ccc', borderRadius: '4px' }}
+                        disabled={!profile.city}
+                      >
+                        <option value="">選擇區域</option>
+                        {profile.city && TAIWAN_DISTRICTS[profile.city]?.map((d: string) => <option key={d} value={d}>{d}</option>)}
+                      </select>
+                    </div>
+                    {(errors.city || errors.district) && <p className="text-red-500 text-sm mt-1" style={{ color: '#ef4444', fontSize: '0.875rem', marginTop: '0.25rem' }}>{errors.city || errors.district}</p>}
+                    
                     <input 
-                      id="address" 
+                      id="detailAddress" 
                       type="text" 
                       className={styles.input} 
-                      value={profile.address} 
-                      onChange={e => setProfile({...profile, address: e.target.value})} 
-                      placeholder="請輸入您的完整收件地址"
+                      value={profile.detailAddress} 
+                      onChange={e => setProfile({...profile, detailAddress: e.target.value})} 
+                      placeholder="復興南路一段 100 號 5 樓..." 
                     />
+                    {errors.detailAddress && <p className="text-red-500 text-sm mt-1" style={{ color: '#ef4444', fontSize: '0.875rem', marginTop: '0.25rem' }}>{errors.detailAddress}</p>}
                   </div>
                   
                   <button type="submit" className={styles.submitBtn} disabled={isSaving}>
