@@ -88,12 +88,15 @@ export async function POST(req: NextRequest) {
             ).join('') || '<li>（商品明細未定）</li>';
 
             await resend.emails.send({
-              from: '漫步食光 <onboarding@resend.dev>',
-              to: orderData.userEmail,
-              subject: `漫步食光 - 您的訂單已付款成功！(訂單編號: ${actualOrderId})`,
+              from: 'onboarding@resend.dev',
+              to: 'adcpapa@gmail.com', // ⚠️ 沙盒限制：請確認這是否是您的註冊信箱，若不是請務必自行修改
+              subject: `[漫步食光測試] 訂單付款成功通知 (編號: ${actualOrderId})`,
               html: `
                 <div style="font-family: sans-serif; color: #4a3b32; line-height: 1.6;">
-                  <h2 style="color: #6d8c54;">💯 感謝您的購買！</h2>
+                  <h2 style="color: #ef4444; border-bottom: 2px solid #ef4444; padding-bottom: 8px;">
+                    ⚠️ 這是測試環境代理郵件。真實顧客信箱為：${orderData.userEmail}
+                  </h2>
+                  <h2 style="color: #6d8c54; margin-top: 20px;">💯 感謝您的購買！</h2>
                   <p>您好，我們已成功收到您透過「綠界科技 ECPay」支付的款項。</p>
                   <p><strong>訂單編號：</strong> ${actualOrderId}</p>
                   <p><strong>刷卡/總金額：</strong> NT$ ${orderData.totalAmount?.toLocaleString() || ecpayParams.TradeAmt}</p>
@@ -110,7 +113,7 @@ export async function POST(req: NextRequest) {
                 </div>
               `
             });
-            console.log(`Success email sent to ${orderData.userEmail}`);
+            console.log(`[Resend Proxy] Test Success email successfully forwarded on behalf of original recipient ${orderData.userEmail}`);
           }
         }
       } catch (emailError) {
