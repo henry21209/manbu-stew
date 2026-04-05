@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
 import { AuthProvider } from "@/context/AuthContext";
+import { Toaster } from "react-hot-toast";
 
 export const metadata: Metadata = {
   title: "漫步食光 Stroll & Eat",
@@ -21,6 +22,7 @@ export default function RootLayout({
       <body>
         <AuthProvider>
           <CartProvider>
+            <Toaster position="top-center" />
             {children}
           </CartProvider>
         </AuthProvider>

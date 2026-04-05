@@ -11,6 +11,7 @@ import { db } from '@/lib/firebase';
 import { z } from 'zod';
 import { TAIWAN_DISTRICTS } from '@/lib/taiwan-data';
 import TopNav from '@/components/TopNav';
+import toast from 'react-hot-toast';
 
 // 企業級聯防：嚴格的表單驗證 Schema，包含 Transform 寬容轉換與連動校驗邏輯
 const checkoutSchema = z.object({
@@ -184,11 +185,11 @@ export default function CheckoutPage() {
       
       clearCart();
 
-      alert('訂單建立成功！請於會員中心完成後續結帳作業。');
+      toast.success('訂單初步建立成功！請準備連線進行加密付款。', { duration: 3000 });
       router.push('/orders');
     } catch (error: any) {
       console.error("Order submission error: ", error);
-      alert(`訂單建立失敗：${error.message || '請稍後再試'}`);
+      toast.error(`訂單建立失敗：${error.message || '請稍後再試'}`, { duration: 5000 });
     } finally {
       setIsSubmitting(false);
     }
@@ -306,13 +307,8 @@ export default function CheckoutPage() {
                     <span className={styles.totalAmount}>NT$ {totalPrice.toLocaleString()}</span>
                   </div>
                   
-                  <button 
-                    type="submit" 
-                    form="checkout-form" 
-                    className={styles.submitBtn}
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? '處理中...' : '確認送出訂單'}
+                  <button type="submit" className={styles.checkoutBtn} disabled={isSubmitting}>
+                    {isSubmitting ? '建立結帳程序中...' : '確認結帳並前往付款'}
                   </button>
                 </div>
               </div>

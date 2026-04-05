@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { collection, query, where, orderBy, getDocs, doc, runTransaction } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import toast from 'react-hot-toast';
 import styles from '@/app/orders/Orders.module.css';
 
 const statusConfig: Record<string, { label: string, color: string, badgeBg: string, badgeText: string }> = {
@@ -17,6 +18,7 @@ export default function OrdersList() {
   const { currentUser } = useAuth();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cancelLoadingId, setCancelLoadingId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -65,8 +67,11 @@ export default function OrdersList() {
   if (orders.length === 0) return <p style={{textAlign: 'center', color: '#666', padding: '2rem'}}>目前沒有訂單紀錄</p>;
 
   const handlePayment = async (order: any) => {
+    let toastId: string | undefined;
     setLoading(true);
     try {
+      toastId = toast.loading('正在前往綠界科技加密付款...');
+      
       const response = await fetch('/api/ecpay/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -96,6 +101,7 @@ export default function OrdersList() {
         // Timeout 防禦：確保若是使用者在新頁面終止或按上一頁回來，React state 也能被還原
         setTimeout(() => {
           setLoading(false);
+          toast.dismiss(toastId);
           if (document.body.contains(tempDiv)) {
             document.body.removeChild(tempDiv);
           }
@@ -105,7 +111,8 @@ export default function OrdersList() {
       }
     } catch (err) {
       console.error("ECPay connection error:", err);
-      alert('金流連線異常，請稍後再試');
+      if (toastId) toast.dismiss(toastId);
+      toast.error('金流連線異常，請稍後再試');
       setLoading(false);
     }
   };
@@ -113,7 +120,7 @@ export default function OrdersList() {
   const handleCancel = async (order: any) => {
     if (!window.confirm('確定要取消這筆訂單嗎？取消後庫存將被還原，如需重新購買請再次下單。')) return;
     
-    setLoading(true);
+    setCancelLoadingId(order.id);
     try {
       if (!currentUser) throw new Error('憑證遺失，請重新登入');
       
@@ -143,12 +150,12 @@ export default function OrdersList() {
 
       // Synchronously update local react hook overriding remote fetch needs
       setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: 'cancelled' } : o));
-      alert('訂單已順利取消！您購買的商品庫存已退回。');
+      toast.success('訂單已順利取消！您購買的商品庫存已退回。', { duration: 4000 });
     } catch (error: any) {
       console.error('Cancellation error:', error);
-      alert(`取消失敗：${error.message || '請稍後重試'}`);
+      toast.error(`取消失敗：${error.message || '請稍後重試'}`, { duration: 5000 });
     } finally {
-      setLoading(false);
+      setCancelLoadingId(null);
     }
   };
 
@@ -212,13 +219,15 @@ export default function OrdersList() {
               <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', width: '100%', justifyContent: 'flex-end' }}>
                 <button 
                   onClick={() => handleCancel(order)}
-                  style={{ background: 'transparent', border: '1px solid #d32f2f', color: '#d32f2f', padding: '0.6rem 1.2rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.9rem', transition: 'all 0.2s', fontWeight: 'bold' }}
+                  disabled={cancelLoadingId === order.id}
+                  style={{ background: 'transparent', border: '1px solid #d32f2f', color: cancelLoadingId === order.id ? '#fca5a5' : '#d32f2f', padding: '0.6rem 1.2rem', borderRadius: '4px', cursor: cancelLoadingId === order.id ? 'wait' : 'pointer', fontSize: '0.9rem', transition: 'all 0.2s', fontWeight: 'bold' }}
                 >
-                  取消訂單
+                  {cancelLoadingId === order.id ? '處理中...' : '取消訂單'}
                 </button>
                 <button 
                   onClick={() => handlePayment(order)}
-                  style={{ background: '#4a3b32', border: 'none', color: '#fff', padding: '0.6rem 2rem', borderRadius: '4px', cursor: 'pointer', fontSize: '1rem', fontWeight: 'bold', transition: 'all 0.2s', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}
+                  disabled={cancelLoadingId === order.id || loading}
+                  style={{ background: '#4a3b32', border: 'none', color: '#fff', padding: '0.6rem 2rem', borderRadius: '4px', cursor: cancelLoadingId === order.id || loading ? 'wait' : 'pointer', fontSize: '1rem', fontWeight: 'bold', transition: 'all 0.2s', boxShadow: '0 2px 8px rgba(0,0,0,0.15)', opacity: cancelLoadingId === order.id || loading ? 0.7 : 1 }}
                 >
                   立即付款
                 </button>
