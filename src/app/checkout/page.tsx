@@ -40,7 +40,7 @@ import Footer from '@/components/Footer';
 
 export default function CheckoutPage() {
   const { cart, totalPrice, clearCart } = useCart();
-  const { currentUser } = useAuth();
+  const { currentUser, loading } = useAuth();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [buyerInfo, setBuyerInfo] = useState({ name: '', phone: '', email: '', city: '', district: '', detailAddress: '', payment: 'credit_card' });
@@ -71,6 +71,14 @@ export default function CheckoutPage() {
     };
     fetchBuyerInfo();
   }, [currentUser]);
+
+  useEffect(() => {
+    // Frontend Authentication Boundary Guard
+    if (!loading && !currentUser) {
+      toast.error('請先登入會員才能進行結帳', { id: 'auth-guard' });
+      router.push('/');
+    }
+  }, [loading, currentUser, router]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -194,6 +202,20 @@ export default function CheckoutPage() {
       setIsSubmitting(false);
     }
   };
+
+  // Anti-FOUC Mechanism: Render a full screen loader during Firebase auth negotiations preventing flash of unauthenticated screens
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#fafafa' }}>
+         <p style={{ fontSize: '1.2rem', color: '#666', animation: 'pulse 2s infinite ease-in-out' }}>正在驗證會員憑證...</p>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    // Optionally return null while router.push transitions
+    return null;
+  }
 
   return (
     <>

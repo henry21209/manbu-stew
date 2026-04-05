@@ -1,0 +1,60 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. 建立管理員判定函式 (Cross-Collection Check)
+    function isAdmin() {
+      // 確認使用者已登入，且擁有 email 屬性
+      return request.auth != null &&
+             request.auth.token.email != null &&
+             // 檢查該 email 是否存在於 admin_roles 集合中
+             exists(/databases/$(database)/documents/admin_roles/$(request.auth.token.email));
+    }
+
+    // 2. products (商品) 集合
+    match /products/{productId} {
+      // Read: 所有人皆可讀取
+      allow read: if true;
+      // Write: 前端沒有此權限，庫存扣除必須交由後端 Admin SDK
+      allow write: if false;
+    }
+
+    // 2.5 categories (商品分類) 集合
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // 3. orders (訂單) 集合
+    match /orders/{orderId} {
+      // Create: 必須登入，且寫入的 userId 必須等於當前使用者的 uid
+      allow create: if request.auth != null && 
+                    request.resource.data.userId == request.auth.uid;
+                    
+      // Read & Update: 使用者只能操作自己的單，或是管理員 (isAdmin) 具有凌駕權限
+      allow read, update: if request.auth != null && 
+                          (resource.data.userId == request.auth.uid || isAdmin());
+                          
+      // Delete: 從前端嚴格封死刪除指令，物理刪除必須透過後端 Admin API
+      allow delete: if false;
+    }
+
+    // 4. users (使用者資料) 集合
+    match /users/{userId} {
+      // Read & Write: 限存取自己的資料
+      allow read, write: if request.auth != null && 
+                            request.auth.uid == userId;
+    }
+
+    // 5. admin_roles (權限表) 集合
+    match /admin_roles/{email} {
+      // Read: 只能讀取 Document ID 為自己信箱的狀態（讓前端能拉取自身權限）
+      allow read: if request.auth != null && 
+                     request.auth.token.email == email;
+                     
+      // Write: 嚴密保護，任何人皆不可從前端越權設定管理員
+      allow write: if false;
+    }
+  }
+}

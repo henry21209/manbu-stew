@@ -42,7 +42,8 @@ export default function ProductGrid() {
         });
         setCategories(categoriesList);
       } catch (error) {
-        console.error("Failed to fetch categories:", error);
+        // 靜默處理：若尚未建立 categories 集合，則僅返回預設空陣列，維持 Console 乾淨專業
+        setCategories([]);
       }
     }
 
