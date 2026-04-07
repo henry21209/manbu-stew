@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -158,7 +159,7 @@ export default function ProductGrid() {
 
               return (
                 // 2. 商品卡片子元素 (Product Card)
-                <div key={p.id} className="flex flex-col group cursor-pointer transition-all duration-300 hover:-translate-y-1">
+                <Link key={p.id} href={`/product/${p.id}`} className="flex flex-col group cursor-pointer transition-all duration-300 hover:-translate-y-1">
                   
                   {/* 圖片區塊：固定長寬比 4:5，外層 overflow-hidden 呈現遮罩 */}
                   <div className="relative aspect-[4/5] w-full overflow-hidden rounded-xl bg-gray-100 shadow-sm border border-gray-100">
@@ -217,7 +218,7 @@ export default function ProductGrid() {
                       </button>
                     </div>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>
