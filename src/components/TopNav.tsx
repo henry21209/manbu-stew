@@ -22,7 +22,7 @@ const navLinks = [
  */
 const ActionIcons = ({ setIsCartOpen }: { setIsCartOpen: (open: boolean) => void }) => {
   const { totalItems } = useCart();
-  const { currentUser, logout } = useAuth();
+  const { currentUser, isAdmin, logout } = useAuth();
   const router = useRouter();
   
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -50,6 +50,14 @@ const ActionIcons = ({ setIsCartOpen }: { setIsCartOpen: (open: boolean) => void
 
   return (
     <div className="flex items-center gap-4 text-[#4a3b32]">
+      {/* 後台入口條件渲染 (僅電腦版顯示，手機版移至漢堡選單內) */}
+      {isAdmin && (
+        <Link href="/admin" className="hidden md:flex items-center gap-1 text-sm font-bold text-red-700 bg-red-50 px-3 py-1.5 rounded-full hover:bg-red-100 transition-colors">
+          <span className="material-symbols-outlined text-[1.1rem]">admin_panel_settings</span>
+          管理後台
+        </Link>
+      )}
+
       {/* 購物車觸發按鈕 */}
       <button className={styles.iconBtn} onClick={() => setIsCartOpen(true)}>
         <span className="material-symbols-outlined text-[1.6rem]">shopping_bag</span>
@@ -134,6 +142,7 @@ const DesktopNav = ({ links, setIsCartOpen }: { links: typeof navLinks, setIsCar
 // 2. 獨立子元件：手機版 (MobileNav)
 const MobileNav = ({ links, setIsCartOpen }: { links: typeof navLinks, setIsCartOpen: (open: boolean) => void }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { isAdmin } = useAuth();
 
   return (
     // 最外層絕對限制： block md:hidden
@@ -171,6 +180,16 @@ const MobileNav = ({ links, setIsCartOpen }: { links: typeof navLinks, setIsCart
       {/* 區塊四：手機版下拉選單 - 毛玻璃質感 */}
       {isMobileMenuOpen && (
         <div className="absolute top-full left-0 w-full bg-white/95 backdrop-blur-md shadow-xl flex flex-col py-4 px-6 z-40 border-t border-[#e5e0d8]/50 rounded-b-2xl">
+          {isAdmin && (
+            <Link 
+              href="/admin" 
+              className="flex items-center gap-2 py-4 text-lg text-red-700 font-bold border-b border-[#e5e0d8]/50"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <span className="material-symbols-outlined text-[1.4rem]">admin_panel_settings</span>
+              管理後台
+            </Link>
+          )}
           {links.map((link) => (
             <Link 
               key={link.label} 
