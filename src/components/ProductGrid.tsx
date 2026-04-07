@@ -199,6 +199,7 @@ export default function ProductGrid() {
                         className={`flex items-center justify-center p-2 rounded-full transition-all duration-300 active:scale-95 ${(p.stock ?? 0) <= 0 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-[#f4efe9] text-[#4a3b32] hover:bg-[#6d8c54] hover:text-white hover:shadow-md'}`}
                         disabled={(p.stock ?? 0) <= 0}
                         onClick={(e) => {
+                          e.preventDefault();
                           e.stopPropagation();
                           if ((p.stock ?? 0) <= 0) return;
                           addToCart({ 

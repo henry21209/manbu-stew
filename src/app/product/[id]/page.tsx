@@ -1,4 +1,13 @@
-export default function ProductDetailPage({ params }: { params: { id: string } }) {
+export default async function ProductDetailPage({ 
+  params 
+}: { 
+  params: Promise<{ id: string }> 
+}) {
+  // 1. 這裡強制等待 Promise 解析完成
+  const resolvedParams = await params;
+  // 2. 將解開後的 id 存入新的常數 productId 中
+  const productId = resolvedParams.id;
+
   return (
     <main className="flex flex-col gap-16 pb-20 pt-24">
       {/* 區塊 A：交易決策區 (上半部) */}
@@ -11,7 +20,8 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
           
           {/* 右側：商品資訊 */}
           <div className="flex flex-col">
-            <h1 className="text-3xl font-bold text-[#4a3b32]">商品名稱測試 (ID: {params.id})</h1>
+            {/* ⚠️ 關鍵修復點：這裡必須使用解開後的 productId，絕對不能寫 params.id */}
+            <h1 className="text-3xl font-bold text-[#4a3b32]">商品名稱測試 (ID: {productId})</h1>
             <p className="text-2xl text-red-700 mt-4">NT$ 999</p>
             <hr className="my-6 border-gray-200" />
             <div className="h-20 bg-gray-100 rounded-lg mb-6 flex items-center justify-center text-gray-500">
