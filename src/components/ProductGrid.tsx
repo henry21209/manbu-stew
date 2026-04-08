@@ -10,6 +10,7 @@ type Product = {
   id: string;
   name: string;
   description: string;
+  summary?: string;
   price: number;
   imageUrl: string;
   category: string;
@@ -32,14 +33,13 @@ export default function ProductGrid() {
   useEffect(() => {
     async function fetchCategories() {
       try {
-        const q = query(collection(db, 'categories'));
+        const q = query(collection(db, 'products'), where('isAvailable', '==', true));
         const querySnapshot = await getDocs(q);
-        const categoriesList: { id: string; name: string }[] = [];
-        querySnapshot.forEach((doc) => {
-          const name = doc.data().name || doc.id;
-          categoriesList.push({ id: doc.id, name });
-        });
-        setCategories(categoriesList);
+        const products = querySnapshot.docs.map(doc => doc.data());
+        // 動態運算現存於資料庫中商品的不重複分類
+        const uniqueCategories = Array.from(new Set(products.map(p => p.category).filter(Boolean)));
+        
+        setCategories(uniqueCategories.map(name => ({ id: name as string, name: name as string })));
       } catch (error) {
         setCategories([]);
       }
@@ -76,6 +76,7 @@ export default function ProductGrid() {
             id: doc.id,
             name: data.name,
             description: data.description,
+            summary: data.summary,
             price: data.price,
             imageUrl: data.imageUrl,
             category: data.category,
@@ -186,7 +187,9 @@ export default function ProductGrid() {
                   <div className="mt-5 flex justify-between flex-col flex-1 px-1">
                     <div>
                       <h3 className="text-xl font-bold text-[#4a3b32] transition-colors group-hover:text-[#6d8c54]">{p.name}</h3>
-                      <p className="mt-2 text-sm text-[#8c827a] line-clamp-2 leading-relaxed">{p.description}</p>
+                      <p className="mt-2 text-sm text-[#8c827a] line-clamp-2 leading-relaxed">
+                        {p.summary || p.description?.replace(/<[^>]+>/g, '').substring(0, 50) + '...' || '目前尚無商品概述'}
+                      </p>
                     </div>
 
                     {/* 售價與追蹤按鈕 */}

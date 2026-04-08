@@ -881,103 +881,12 @@ export default function AdminPage() {
               {activeTab === 'products' && (
                 <div className={styles.dashboardContent}>
                   <div className={styles.actionRow} style={{ alignItems: 'center' }}>
-                    <button 
-                      onClick={() => {
-                        setIsAddingProduct(true);
-                        setEditingProduct(null);
-                        setNewProduct({ name: "", price: 0, category: "", description: "", tags: "", isAvailable: true, stock: 0 });
-                      }} 
-                      className={styles.primaryBtn}
-                    >
+                    <Link href="/admin/products/new" className={styles.primaryBtn} style={{ textDecoration: 'none' }}>
                       ＋ 新增商品
-                    </button>
+                    </Link>
                   </div>
                   
-                  {(isAddingProduct || editingProduct) && (
-                  <div className={styles.modalOverlay} onClick={() => { setEditingProduct(null); setIsAddingProduct(false); setUpdatingProductId(null); }}>
-                    <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
-                      <h3 className={styles.formTitle}>{editingProduct ? '編輯商品' : '建立新商品'}</h3>
-                    <form className={styles.formRow} onSubmit={editingProduct ? handleUpdateProduct : handleAddProduct}>
-                      <div className={styles.fieldGroup}>
-                        <label className={styles.label}>商品名稱</label>
-                        <input className={styles.input} type="text" required value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} />
-                      </div>
-                      <div className={styles.fieldGroup}>
-                        <label className={styles.label}>價格 (NT$)</label>
-                        <input className={styles.input} type="number" required min="0" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: Number(e.target.value)})} />
-                      </div>
-                      <div className={styles.fieldGroup}>
-                        <label className={styles.label}>庫存數量</label>
-                        <input className={styles.input} type="number" required min="0" value={newProduct.stock} onChange={e => setNewProduct({...newProduct, stock: Number(e.target.value)})} />
-                      </div>
-                      <div className={styles.fieldGroup}>
-                        <label className={styles.label}>分類</label>
-                        {!isAddingCategory ? (
-                          <div style={{ display: 'flex', gap: '0.5rem' }}>
-                            <select className={styles.input} style={{ flex: 1 }} required value={newProduct.category} onChange={e => setNewProduct({...newProduct, category: e.target.value})}>
-                              <option value="">{categories.length === 0 ? "載入分類中或無分類" : "請選擇"}</option>
-                              {categories.map(cat => (
-                                <option key={cat.id} value={cat.name}>{cat.name}</option>
-                              ))}
-                            </select>
-                            <button type="button" onClick={() => setIsAddingCategory(true)} className={styles.toggleBtn}>
-                              + 新增分類
-                            </button>
-                          </div>
-                        ) : (
-                          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                            <input 
-                              className={styles.input} 
-                              style={{ flex: 1 }}
-                              type="text" 
-                              placeholder="輸入新分類名稱" 
-                              value={newCategoryName} 
-                              onChange={e => setNewCategoryName(e.target.value)} 
-                              autoFocus
-                            />
-                            <button type="button" onClick={handleAddCategory} disabled={!newCategoryName.trim()} className={`${styles.btnBase} ${styles.btnPrimary}`}>
-                              確定
-                            </button>
-                            <button type="button" onClick={() => { setIsAddingCategory(false); setNewCategoryName(""); }} className={`${styles.btnBase} ${styles.btnSecondary}`}>
-                              取消
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                      <div className={styles.fieldGroup}>
-                        <label className={styles.label}>描述</label>
-                        <input className={styles.input} type="text" required value={newProduct.description} onChange={e => setNewProduct({...newProduct, description: e.target.value})} />
-                      </div>
-                      <div className={styles.fieldGroup}>
-                        <label className={styles.label}>標籤 (用逗號分隔)</label>
-                        <input className={styles.input} type="text" placeholder="例: 最新, 推薦, 熱門" value={newProduct.tags} onChange={e => setNewProduct({...newProduct, tags: e.target.value})} />
-                      </div>
-                      <div className={styles.fieldGroup}>
-                        <label className={styles.label}>商品圖片</label>
-                        <input 
-                          className={styles.input} 
-                          type="file" 
-                          accept="image/*" 
-                          required={!editingProduct} 
-                          onChange={e => {
-                            if (e.target.files && e.target.files[0]) {
-                              setImageFile(e.target.files[0]);
-                            }
-                          }} 
-                        />
-                      </div>
-                      <div className={styles.formActions}>
-                        <button type="button" onClick={() => { setEditingProduct(null); setIsAddingProduct(false); setUpdatingProductId(null); }} className={`${styles.btnBase} ${styles.btnSecondary}`}>
-                          取消
-                        </button>
-                        <button type="submit" className={`${styles.btnBase} ${styles.btnPrimary}`} disabled={isSubmittingProduct}>
-                          {isUploading ? '圖片上傳中...' : isSubmittingProduct ? '處理中...' : (editingProduct ? '儲存修改' : '確認新增')}
-                        </button>
-                      </div>
-                    </form>
-                    </div>
-                  </div>
-                  )}
+
                 
                 {isLoadingProducts ? (
                   <div className={styles.loadingOrders}>正在載入商品...</div>
@@ -1015,13 +924,13 @@ export default function AdminPage() {
                               </td>
                               <td>
                                 <div className={styles.actionButtons}>
-                                  <button 
+                                  <Link 
+                                    href={`/admin/products/${p.id}`}
                                     className={styles.shipBtn}
-                                    disabled={updatingProductId === p.id}
-                                    onClick={() => handleEditProductClick(p)}
+                                    style={{ textDecoration: 'none', textAlign: 'center' }}
                                   >
                                     編輯商品
-                                  </button>
+                                  </Link>
                                   <button 
                                     className={styles.toggleBtn}
                                     disabled={updatingProductId === p.id}

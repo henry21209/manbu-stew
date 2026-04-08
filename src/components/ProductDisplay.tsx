@@ -7,6 +7,7 @@ export interface ProductDisplayProps {
     price: number;
     imageUrl?: string;
     description?: string;
+    summary?: string;
     [key: string]: any;
   };
 }
@@ -36,14 +37,13 @@ export default function ProductDisplay({ product }: ProductDisplayProps) {
             {/* 動態綁定商品名稱與價格 */}
             <h1 className="text-3xl font-bold text-[#4a3b32]">{product.name}</h1>
             <p className="text-2xl text-red-700 mt-4">NT$ {product.price}</p>
+            {product.summary && (
+              <p className="text-gray-500 text-sm mt-4 leading-relaxed whitespace-pre-wrap">{product.summary}</p>
+            )}
             
             <hr className="my-6 border-gray-200" />
             
-            {/* 這裡先保留規格選擇器骨架 */}
-            <div className="h-20 bg-gray-100 rounded-lg mb-6 flex items-center justify-center text-gray-500">
-              規格選擇器區塊
-            </div>
-            
+
             {/* // 未來會在此處接上 onClick={() => addToCart(...)} 邏輯 */}
             <button className="w-full bg-[#4a3b32] text-white py-4 rounded-xl hover:bg-[#6b5a4e] transition-colors font-bold text-lg">
               加入購物車
@@ -60,10 +60,8 @@ export default function ProductDisplay({ product }: ProductDisplayProps) {
           </button>
         </div>
         <div className="mt-8">
-          {/* 動態綁定長文案敘述 */}
-          <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">
-            {product.description || '目前尚無詳細介紹。'}
-          </p>
+          {/* 動態綁定長文案敘述 (解析 HTML) */}
+          <div className="prose max-w-none text-gray-600 leading-relaxed" dangerouslySetInnerHTML={{ __html: product.description || '目前尚無詳細介紹。' }} />
         </div>
       </section>
     </main>
