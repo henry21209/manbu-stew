@@ -132,6 +132,32 @@
   color: var(--primary);
 }
 
+.qtyInput {
+  width: 45px;
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--on-surface);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 0.1rem;
+  -moz-appearance: textfield;
+}
+
+.qtyInput::-webkit-outer-spin-button,
+.qtyInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.qtyInput:focus {
+  outline: none;
+  border-color: var(--outline-variant);
+  background: var(--surface-container-lowest);
+}
+
 .rmBtn {
   color: var(--on-surface-variant);
   transition: color 0.3s;

@@ -51,12 +51,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ o
         throw new Error('ORDER_NOT_FOUND');
       }
 
-      const status = orderSnap.data()?.status;
-      // 唯有已確實停損的訂單才允許物理拔除，確保不會出現庫存永遠退不回去的漏洞
-      if (status !== 'cancelled' && status !== 'failed') {
-        throw new Error('INVALID_STATUS');
-      }
-
+      // 取消原本的狀態限制，方便管理者直接刪除測試訂單
       // 4. 執行物理數據抹除
       t.delete(orderRef);
     });
@@ -66,7 +61,6 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ o
   } catch (error: any) {
     console.error('Delete order error:', error);
     if (error.message === 'ORDER_NOT_FOUND') return NextResponse.json({ error: '查無此訂單' }, { status: 404 });
-    if (error.message === 'INVALID_STATUS') return NextResponse.json({ error: '僅允許物理刪除狀態為「已取消」或「失敗」的訂單，請先完成取消流程。' }, { status: 400 });
     
     return NextResponse.json({ error: '伺服器內部錯誤，請聯絡管理員' }, { status: 500 });
   }

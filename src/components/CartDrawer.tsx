@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import styles from './CartDrawer.module.css';
 import { useCart } from '@/context/CartContext';
@@ -10,8 +10,43 @@ interface CartDrawerProps {
   onClose: () => void;
 }
 
+function QuantityInput({ item, setQuantity }: { item: { id: string, quantity: number }, setQuantity: (id: string, qty: number) => void }) {
+  const [inputValue, setInputValue] = useState(item.quantity.toString());
+
+  useEffect(() => {
+    setInputValue(item.quantity.toString());
+  }, [item.quantity]);
+
+  return (
+    <input 
+      type="number"
+      className={styles.qtyInput}
+      value={inputValue}
+      onFocus={(e) => e.target.select()}
+      onChange={(e) => {
+        const val = e.target.value;
+        setInputValue(val); // 允許使用者暫時將值清空為字串 '' 方便重打
+        
+        const numeric = parseInt(val);
+        if (!isNaN(numeric) && numeric > 0) {
+          setQuantity(item.id, Math.min(999, numeric));
+        }
+      }}
+      onBlur={() => {
+        const numeric = parseInt(inputValue);
+        if (isNaN(numeric) || numeric < 1) {
+          setInputValue('1');
+          setQuantity(item.id, 1);
+        } else {
+          setInputValue(Math.min(999, numeric).toString());
+        }
+      }}
+    />
+  );
+}
+
 export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
-  const { cart, updateQuantity, removeFromCart, totalPrice } = useCart();
+  const { cart, updateQuantity, setQuantity, removeFromCart, totalPrice } = useCart();
 
   useEffect(() => {
     if (isOpen) {
@@ -58,7 +93,9 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                     >
                       <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>remove</span>
                     </button>
-                    <span>{item.quantity}</span>
+                    
+                    <QuantityInput item={item} setQuantity={setQuantity} />
+
                     <button 
                       className={styles.qtyBtn}
                       onClick={() => updateQuantity(item.id, 1)}

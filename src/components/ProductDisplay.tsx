@@ -1,5 +1,8 @@
 "use client";
 
+import { useCart } from '@/context/CartContext';
+import toast from 'react-hot-toast';
+
 export interface ProductDisplayProps {
   product: {
     id: string;
@@ -13,6 +16,8 @@ export interface ProductDisplayProps {
 }
 
 export default function ProductDisplay({ product }: ProductDisplayProps) {
+  const { addToCart } = useCart();
+
   return (
     <main className="flex flex-col gap-16 pb-20 pt-24">
       {/* 區塊 A：交易決策區 (上半部) */}
@@ -44,9 +49,21 @@ export default function ProductDisplay({ product }: ProductDisplayProps) {
             <hr className="my-6 border-gray-200" />
             
 
-            {/* // 未來會在此處接上 onClick={() => addToCart(...)} 邏輯 */}
-            <button className="w-full bg-[#4a3b32] text-white py-4 rounded-xl hover:bg-[#6b5a4e] transition-colors font-bold text-lg">
-              加入購物車
+            {/* 實作購物車按鈕，包含庫存判斷與提示 */}
+            <button 
+              className={`w-full text-white py-4 rounded-xl transition-colors font-bold text-lg ${(product.stock ?? 0) <= 0 ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#4a3b32] hover:bg-[#6b5a4e]'}`}
+              disabled={(product.stock ?? 0) <= 0}
+              onClick={() => {
+                addToCart({ 
+                  id: product.id, 
+                  name: product.name, 
+                  price: product.price,
+                  imageUrl: product.imageUrl || ''
+                });
+                toast.success('商品已加入購物車！');
+              }}
+            >
+              {(product.stock ?? 0) <= 0 ? '已售完' : '加入購物車'}
             </button>
           </div>
         </div>

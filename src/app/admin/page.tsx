@@ -107,6 +107,19 @@ export default function AdminPage() {
   // Tab Routing
   const [activeTab, setActiveTab] = useState<'orders' | 'analytics' | 'products'>('orders');
 
+  // 持久化記憶管理員最後停留的頁籤
+  useEffect(() => {
+    const savedTab = localStorage.getItem('manbu-admin-tab');
+    if (savedTab === 'orders' || savedTab === 'analytics' || savedTab === 'products') {
+      setActiveTab(savedTab);
+    }
+  }, []);
+
+  const handleTabChange = (tab: 'orders' | 'analytics' | 'products') => {
+    setActiveTab(tab);
+    localStorage.setItem('manbu-admin-tab', tab);
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
@@ -502,14 +515,33 @@ export default function AdminPage() {
   };
 
   const handleDeleteOrder = async (orderId: string) => {
-    const confirmDelete = window.confirm('警告：刪除訂單將導致財務紀錄遺失，確定要刪除嗎？');
+    const confirmDelete = window.confirm('警告：確定要強制永久刪除此(測試)訂單嗎？刪除後紀錄將無法恢復。');
     if (!confirmDelete) return;
+
+    if (!user) {
+      alert('權限錯誤：無法取得當前使用者身分');
+      return;
+    }
 
     setUpdatingOrderId(orderId);
     try {
-      const orderRef = doc(db, "orders", orderId);
-      await deleteDoc(orderRef);
+      const token = await user.getIdToken();
+      
+      const res = await fetch(`/api/admin/orders/${orderId}/delete`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || '刪除失敗');
+      }
+
       setOrders(prev => prev.filter(o => o.id !== orderId));
+      alert('訂單已從伺服器徹底移除！');
     } catch (error: any) {
       console.error("Error deleting order:", error);
       alert(`刪除訂單失敗：${error.message || '請確認操作權限'}`);
@@ -631,19 +663,19 @@ export default function AdminPage() {
               <div className={styles.tabsContainer}>
                 <button 
                   className={`${styles.tabBtn} ${activeTab === 'orders' ? styles.tabActive : ''}`}
-                  onClick={() => setActiveTab('orders')}
+                  onClick={() => handleTabChange('orders')}
                 >
                   訂單管理
                 </button>
                 <button 
                   className={`${styles.tabBtn} ${activeTab === 'analytics' ? styles.tabActive : ''}`}
-                  onClick={() => setActiveTab('analytics')}
+                  onClick={() => handleTabChange('analytics')}
                 >
                   營運分析
                 </button>
                 <button 
                   className={`${styles.tabBtn} ${activeTab === 'products' ? styles.tabActive : ''}`}
-                  onClick={() => setActiveTab('products')}
+                  onClick={() => handleTabChange('products')}
                 >
                   商品庫存管理
                 </button>
