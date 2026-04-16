@@ -2,6 +2,7 @@
 
 import { useCart } from '@/context/CartContext';
 import toast from 'react-hot-toast';
+import Image from 'next/image';
 
 export interface ProductDisplayProps {
   product: {
@@ -25,12 +26,14 @@ export default function ProductDisplay({ product }: ProductDisplayProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
           
           {/* 左側：真實商品主圖 */}
-          <div className="aspect-square bg-gray-100 rounded-2xl flex items-center justify-center overflow-hidden">
+          <div className="aspect-square bg-gray-100 rounded-2xl flex items-center justify-center overflow-hidden relative">
             {product.imageUrl ? (
-              <img 
+              <Image 
                 src={product.imageUrl} 
                 alt={product.name} 
-                className="w-full h-full object-cover object-center"
+                fill
+                className="object-cover object-center"
+                sizes="(max-width: 768px) 100vw, 50vw"
               />
             ) : (
               <span className="text-gray-400">無圖片</span>
